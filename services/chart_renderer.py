@@ -184,7 +184,37 @@ def render_chart_with_overlays(
         hi = fb["swing_high"]["price"]; lo = fb["swing_low"]["price"]
         for lvl in fb["levels"]:
             ax.axhline(lo + (hi-lo)*float(lvl), linestyle="--", linewidth=0.8)
+    # --- Annotate Entry / SL / TP if provided in overlays
+    # overlays may include: overlays['annotate_levels'] = {'entry': float, 'sl': float, 'tp': float}
+    def _annotate_levels(ax, entry=None, sl=None, tp=None):
+        try:
+            xlim = ax.get_xlim()
+            x_pos = xlim[1]
+        except Exception:
+            x_pos = None
+        items = (
+            (entry, 'Entry', 'yellow'),
+            (sl, 'SL', 'red'),
+            (tp, 'TP', 'lime')
+        )
+        for price, label, color in items:
+            if price is None:
+                continue
+            ax.axhline(price, color=color, linestyle='-', linewidth=1.0, alpha=0.9)
+            try:
+                if x_pos is not None:
+                    ax.text(x_pos, price, f"{label} {price:.2f}", color=color,
+                            fontsize=8, ha='right', va='center', backgroundcolor='black')
+                else:
+                    ax.text(0.98, price, f"{label} {price:.2f}", color=color,
+                            fontsize=8, ha='right', va='center', transform=ax.get_yaxis_transform(), backgroundcolor='black')
+            except Exception:
+                # Best-effort annotate; don't fail the whole render for text placement issues
+                logger.debug("Failed to draw level label for %s", label)
 
+    ann = overlays.get('annotate_levels') or overlays.get('levels')
+    if isinstance(ann, dict):
+        _annotate_levels(ax, entry=ann.get('entry'), sl=ann.get('sl'), tp=ann.get('tp'))
     # X тэнхлэгийн тохиргоо
     fig.autofmt_xdate()
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))

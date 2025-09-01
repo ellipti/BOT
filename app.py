@@ -125,7 +125,17 @@ def run_once():
                 logger.info("Trade placed and cooldown marked by safety gate.")
                 if tg:
                     t = "DRY" if res.get("dry") else f"TICKET {res.get('ticket')}"
-                    tg.send(f"{base_msg}\n→ {t} | lot={res.get('lot')} | SL={res.get('sl')} | TP={res.get('tp')}")
+                    # annotate and send chart with Entry/SL/TP
+                    ann = {"entry": float(res.get('price') or last_close), "sl": float(res.get('sl') or 0.0), "tp": float(res.get('tp') or 0.0)}
+                    # re-render last portion of df with annotations (best-effort)
+                    try:
+                        overlays_anno = overlays.copy()
+                        overlays_anno['annotate_levels'] = ann
+                        out_png_anno = render_chart_with_overlays(df.tail(200), overlays_anno, out_png_rel, f"{sym} {settings.timeframe_str}")
+                        tg.send(f"{base_msg}\n→ {t} | lot={res.get('lot')} | SL={res.get('sl')} | TP={res.get('tp')}")
+                        tg.send_photo(out_png_anno, caption=f"{sym} {decision.action} {t}")
+                    except Exception as e:
+                        logger.exception("Failed to render/send annotated chart: %s", e)
             else:
                 logger.error(f"Ордер биелүүлж чадсангүй (safety gate): {res}")
         else:

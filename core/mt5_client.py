@@ -12,6 +12,12 @@ class MT5Client:
 
     def connect(self, login: int = 0, password: str = "", server: str = "", path: Optional[str] = None, attach_mode: bool = False) -> bool:
         try:
+            # Log connection attempt (non-sensitive fields only)
+            try:
+                logger.info(f"MT5 connect called | attach_mode={attach_mode} | path={path} | login_provided={bool(login)} | server_provided={bool(server)}")
+            except Exception:
+                # best-effort logging
+                logger.info("MT5 connect called")
             # Initialize MT5
             ok = mt5.initialize(path) if path else mt5.initialize()
             if not ok:
@@ -117,6 +123,35 @@ class MT5Client:
         if not df.empty:
             df["time"] = pd.to_datetime(df["time"], unit="s")
         return df
+
+    def get_positions(self):
+        """Return open positions (raw from MT5) and log a short summary."""
+        try:
+            pos = mt5.positions_get()
+            if not pos:
+                logger.info("Open positions: none")
+                return []
+            # Log brief summary
+            sample = [repr(p) for p in pos[:3]]
+            logger.info(f"Open positions: count={len(pos)} | sample={sample}")
+            return pos
+        except Exception as e:
+            logger.exception(f"Error fetching positions: {e}")
+            return []
+
+    def get_orders(self):
+        """Return pending orders (raw from MT5) and log a short summary."""
+        try:
+            orders = mt5.orders_get()
+            if not orders:
+                logger.info("Pending orders: none")
+                return []
+            sample = [repr(o) for o in orders[:3]]
+            logger.info(f"Pending orders: count={len(orders)} | sample={sample}")
+            return orders
+        except Exception as e:
+            logger.exception(f"Error fetching orders: {e}")
+            return []
 
     def account_snapshot(self) -> Optional[dict]:
         acc = mt5.account_info()
