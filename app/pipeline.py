@@ -1,7 +1,7 @@
 """
 Trading Pipeline - Event-driven flow coordination with Risk Management and Reconciliation
 Wires together the trading pipeline: Signal → Validation → Risk → Order → Execution → Reconciliation
-Integrates ATR-based position sizing and MT5 deal history reconciliation
+Integrates ATR-based position sizing and MT5 deal history reconciliation with comprehensive metrics
 """
 
 import hashlib
@@ -32,6 +32,7 @@ from core.sizing.sizing import (
     fetch_atr,
     get_account_equity,
 )
+from observability.metrics import inc, observe, set_gauge
 
 if TYPE_CHECKING:
     from config.settings import ApplicationSettings
@@ -97,8 +98,11 @@ class TradingPipeline:
         Args:
             event: SignalDetected event with trading signal
         """
+        # Increment signal counter
+        inc("signals_detected", symbol=event.symbol, side=event.side)
+
         logger.info(
-            f"Processing signal: {event.symbol} {event.side} strength={event.strength}"
+            f"📡 Processing signal: {event.symbol} {event.side} strength={event.strength}"
         )
 
         # Placeholder validation logic
@@ -117,6 +121,12 @@ class TradingPipeline:
         validated = Validated(
             symbol=event.symbol, side=event.side, reason=validation_reason
         )
+
+        # Track validation results
+        if validated.is_valid:
+            inc("signals_validated", symbol=event.symbol, side=event.side)
+        else:
+            inc("signals_rejected", symbol=event.symbol, reason="validation_failed")
 
         logger.debug(
             f"Signal validation: {'PASS' if validated.is_valid else 'FAIL'} - {validation_reason or 'OK'}"
@@ -268,6 +278,10 @@ class TradingPipeline:
         start_time = time.time()
         client_order_id = event.client_order_id
 
+        # Track order placement
+        inc("orders_placed", symbol=event.symbol, side=event.side)
+        set_gauge("current_orders_processing", 1)
+
         logger.info(
             f"📤 Order placement received: {client_order_id} {event.symbol} {event.side}"
         )
@@ -288,6 +302,9 @@ class TradingPipeline:
             result = self.executor.place(order_request)
             broker_latency = time.time() - start_time
 
+            # Track broker latency
+            observe("broker_latency_ms", broker_latency * 1000, symbol=event.symbol)
+
             logger.info(
                 f"🏦 Broker response for {client_order_id}: accepted={result.accepted}, "
                 f"broker_order_id={result.broker_order_id}, reason='{result.reason}', "
@@ -295,6 +312,9 @@ class TradingPipeline:
             )
 
             if result.accepted:
+                # Track accepted orders
+                inc("orders_accepted", symbol=event.symbol, side=event.side)
+
                 # Order accepted by broker - now wait for fill confirmation
                 reconciliation_start = time.time()
 
@@ -305,6 +325,7 @@ class TradingPipeline:
                         mt5 = self.broker.get_mt5_module()
                     except Exception as e:
                         logger.warning(f"Cannot get MT5 module for reconciliation: {e}")
+                        inc("errors_total", error_type="mt5_module_access")
 
                 if mt5:
                     # Wait for fill using deal history reconciliation
@@ -321,7 +342,20 @@ class TradingPipeline:
                     reconciliation_latency = time.time() - reconciliation_start
                     total_latency = time.time() - start_time
 
+                    # Track reconciliation latency
+                    observe(
+                        "reconciliation_latency_ms",
+                        reconciliation_latency * 1000,
+                        symbol=event.symbol,
+                    )
+                    observe(
+                        "total_latency_ms", total_latency * 1000, symbol=event.symbol
+                    )
+
                     if filled:
+                        # Track successful fills
+                        inc("orders_filled", symbol=event.symbol, side=event.side)
+
                         # Get deal execution price
                         fill_price = None
                         if deal_ticket:
@@ -332,10 +366,12 @@ class TradingPipeline:
                             fill_price = get_current_tick_price(
                                 mt5, event.symbol, event.side
                             )
+                            inc("fill_price_fallbacks", fallback_type="market_price")
 
                         # Final fallback to placeholder (should rarely happen)
                         if fill_price is None:
                             fill_price = 2500.0  # Placeholder
+                            inc("fill_price_fallbacks", fallback_type="placeholder")
                             logger.warning(
                                 f"Using placeholder fill price for {client_order_id}"
                             )
@@ -358,6 +394,9 @@ class TradingPipeline:
                         )
 
                     else:
+                        # Track reconciliation timeouts
+                        inc("orders_timeout", symbol=event.symbol, side=event.side)
+
                         # Reconciliation timeout - order may still be pending
                         logger.warning(
                             f"⏱️ Reconciliation timeout for {client_order_id} after "
@@ -372,6 +411,8 @@ class TradingPipeline:
 
                 else:
                     # No MT5 module available - emit basic Filled event
+                    inc("orders_no_reconciliation", symbol=event.symbol)
+
                     logger.warning(
                         f"No MT5 reconciliation available for {client_order_id} - "
                         f"emitting basic Filled event"
@@ -386,8 +427,22 @@ class TradingPipeline:
                     self.bus.publish(filled_event)
 
             else:
+                # Track rejected orders
+                inc(
+                    "orders_rejected",
+                    symbol=event.symbol,
+                    side=event.side,
+                    reason="broker_rejected",
+                )
+
                 # Order rejected by broker
                 total_latency = time.time() - start_time
+                observe(
+                    "total_latency_ms",
+                    total_latency * 1000,
+                    symbol=event.symbol,
+                    outcome="rejected",
+                )
 
                 logger.warning(
                     f"❌ Order rejected by broker: {client_order_id} - {result.reason}, "
@@ -401,8 +456,23 @@ class TradingPipeline:
                 self.bus.publish(rejected)
 
         except Exception as e:
+            # Track execution errors
+            inc("errors_total", error_type="order_execution")
+            inc(
+                "orders_rejected",
+                symbol=event.symbol,
+                side=event.side,
+                reason="execution_error",
+            )
+
             # Execution error
             total_latency = time.time() - start_time
+            observe(
+                "total_latency_ms",
+                total_latency * 1000,
+                symbol=event.symbol,
+                outcome="error",
+            )
 
             logger.error(
                 f"💥 Order execution failed: {client_order_id} - {e}, "
@@ -415,8 +485,14 @@ class TradingPipeline:
             )
             self.bus.publish(rejected)
 
+        finally:
+            # Always reset processing gauge
+            set_gauge("current_orders_processing", 0)
+
         # Log final order details for monitoring
         final_latency = time.time() - start_time
+        observe("final_latency_ms", final_latency * 1000, symbol=event.symbol)
+
         logger.info(
             f"📊 Order processing complete: symbol={event.symbol}, side={event.side}, "
             f"qty={event.qty}, sl={event.sl}, tp={event.tp}, "

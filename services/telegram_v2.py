@@ -1,4 +1,4 @@
-"""Modern Telegram integration using python-telegram-bot v20+"""
+"""Modern Telegram integration using python-telegram-bot v20+ with enhanced observability commands"""
 
 import asyncio
 import os
@@ -10,6 +10,15 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 from config.settings import get_settings
 from core.logger import get_logger
+
+# Import enhanced commands
+from .telegram_commands import (
+    enhanced_help_command,
+    enhanced_status_command,
+    health_command,
+    metrics_command,
+    quick_status_command,
+)
 
 logger = get_logger("telegram_v2")
 settings = get_settings()
@@ -126,48 +135,34 @@ class TelegramBotV2:
 
 
 def build_application(token: str) -> Application:
-    """Build Telegram Application with handlers"""
+    """Build Telegram Application with enhanced command handlers"""
 
     async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /start command"""
         await update.message.reply_text(
-            "🤖 Trading Bot Online ✅\n"
+            "🤖 **Trading Bot Online** ✅\n"
+            "\n"
             "Available commands:\n"
-            "/start - Show this message\n"
-            "/status - Bot status\n"
-            "/help - Help information"
-        )
-
-    async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /status command"""
-        # This would be enhanced to show actual bot status
-        await update.message.reply_text(
-            "📊 Bot Status:\n"
-            "• Connection: Active\n"
-            "• Last trade: N/A\n"
-            "• Safety gates: Active\n"
-            f"• Chat ID: {update.effective_chat.id}"
-        )
-
-    async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /help command"""
-        await update.message.reply_text(
-            "🆘 Trading Bot Help\n\n"
-            "This bot provides automated trading notifications and can respond to basic commands.\n\n"
-            "Commands:\n"
-            "/start - Initialize bot\n"
-            "/status - Check bot status\n"
-            "/help - This help message\n\n"
-            "The bot will automatically send trade notifications and charts when trades are executed."
+            "📊 /status - Full status report\n"
+            "⚡ /qs - Quick status\n"
+            "📈 /metrics - Metrics summary\n"
+            "🏥 /health - Health check\n"
+            "🆘 /help - All commands\n"
+            "\n"
+            "Use /help for detailed command info.",
+            parse_mode="Markdown",
         )
 
     # Build application
     application = Application.builder().token(token).build()
 
-    # Add command handlers
+    # Add enhanced command handlers
     application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("status", status_command))
-    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("status", enhanced_status_command))
+    application.add_handler(CommandHandler("qs", quick_status_command))
+    application.add_handler(CommandHandler("metrics", metrics_command))
+    application.add_handler(CommandHandler("health", health_command))
+    application.add_handler(CommandHandler("help", enhanced_help_command))
 
     return application
 

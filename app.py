@@ -8,6 +8,7 @@ from config.settings import get_settings
 from core.mt5_client import MT5Client
 from integrations.calendar import get_calendar_guard_sync
 from logging_setup import setup_advanced_logger
+from observability import start_httpd
 from safety_gate import Decision, Guard
 from services.chart_renderer import render_chart_with_overlays
 from services.telegram_notify import (
@@ -56,6 +57,19 @@ def run_diag(mt5c: MT5Client):
 
 
 def run_once():
+    # Start observability HTTP server if enabled
+    if settings.observability.enable_http_metrics:
+        try:
+            start_httpd(
+                port=settings.observability.metrics_port,
+                host=settings.observability.metrics_host,
+            )
+            logger.info(
+                f"📊 Metrics server started on http://{settings.observability.metrics_host}:{settings.observability.metrics_port}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to start metrics server: {e}")
+
     mt5c = MT5Client()
 
     if settings.mt5.attach_mode:

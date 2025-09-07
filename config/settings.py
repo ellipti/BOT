@@ -349,6 +349,40 @@ class LoggingSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="LOG_", case_sensitive=False)
 
 
+class ObservabilitySettings(BaseSettings):
+    """Observability, metrics, and monitoring settings"""
+
+    # HTTP metrics server
+    enable_http_metrics: bool = Field(
+        default=True, description="Enable HTTP metrics endpoint server"
+    )
+
+    metrics_port: PositiveInt = Field(
+        default=9101, description="Port for HTTP metrics server"
+    )
+
+    metrics_host: str = Field(
+        default="0.0.0.0", description="Host to bind metrics server"
+    )
+
+    # Prometheus integration
+    enable_prometheus: bool = Field(
+        default=False, description="Enable Prometheus metrics format"
+    )
+
+    # Health check settings
+    health_check_interval: PositiveInt = Field(
+        default=30, description="Health check interval in seconds"
+    )
+
+    # Event lag threshold
+    event_lag_threshold_seconds: PositiveInt = Field(
+        default=60, description="Event lag threshold for health warnings"
+    )
+
+    model_config = SettingsConfigDict(env_prefix="METRICS_", case_sensitive=False)
+
+
 class ApplicationSettings(BaseSettings):
     """Main application configuration combining all settings"""
 
@@ -383,6 +417,7 @@ class ApplicationSettings(BaseSettings):
     telegram: TelegramSettings = Field(default_factory=TelegramSettings)
     integrations: IntegrationSettings = Field(default_factory=IntegrationSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)
 
     # Version info
     version: str = Field(default="1.0.0", description="Application version")
@@ -488,6 +523,10 @@ class LegacySettings:
             "TE_API_KEY": lambda: self._settings.integrations.te_api_key,
             # Logging
             "TRADE_LOG_ENABLED": lambda: self._settings.logging.trade_log_enabled,
+            # Observability
+            "ENABLE_HTTP_METRICS": lambda: self._settings.observability.enable_http_metrics,
+            "METRICS_PORT": lambda: self._settings.observability.metrics_port,
+            "ENABLE_PROMETHEUS": lambda: self._settings.observability.enable_prometheus,
             # Other
             "USD_PER_LOT_PER_USD_MOVE": lambda: self._settings.trading.usd_per_lot_per_usd_move,
         }
