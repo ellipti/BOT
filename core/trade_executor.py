@@ -1,12 +1,15 @@
-from dataclasses import dataclass
-from typing import Optional, Literal, Dict
 import math
+from dataclasses import dataclass
+from typing import Literal
+
 import MetaTrader5 as mt5
 
 from .logger import get_logger
+
 logger = get_logger("executor")
 
 Side = Literal["BUY", "SELL"]
+
 
 @dataclass
 class ExecSettings:
@@ -17,7 +20,8 @@ class ExecSettings:
     dry_run: bool
     magic: int
     order_comment: str
-    filling_mode: Optional[int] = None  # mt5.ORDER_FILLING_IOC / FOK / RETURN
+    filling_mode: int | None = None  # mt5.ORDER_FILLING_IOC / FOK / RETURN
+
 
 class TradeExecutor:
     def __init__(self, settings: ExecSettings):
@@ -32,7 +36,11 @@ class TradeExecutor:
         if self.s.filling_mode is not None:
             return self.s.filling_mode
         try:
-            if sym.trade_fill_mode in (mt5.ORDER_FILLING_FOK, mt5.ORDER_FILLING_IOC, mt5.ORDER_FILLING_RETURN):
+            if sym.trade_fill_mode in (
+                mt5.ORDER_FILLING_FOK,
+                mt5.ORDER_FILLING_IOC,
+                mt5.ORDER_FILLING_RETURN,
+            ):
                 return sym.trade_fill_mode
         except Exception:
             pass
@@ -64,7 +72,9 @@ class TradeExecutor:
         return float(min(max(lot, vol_min), vol_max))
 
     # --- Public: place market order ---
-    def place(self, symbol: str, side: Side, price_hint: Optional[float], atr_value: float) -> Dict:
+    def place(
+        self, symbol: str, side: Side, price_hint: float | None, atr_value: float
+    ) -> dict:
         sym = mt5.symbol_info(symbol)
         if not sym:
             return {"ok": False, "reason": "symbol_info_none"}
@@ -75,7 +85,7 @@ class TradeExecutor:
 
         price = tick.ask if side == "BUY" else tick.bid
         digits = sym.digits
-        point  = sym.point
+        point = sym.point
 
         # Stop distance from ATR
         stop_dist = max(atr_value * self.s.sl_atr_mult, sym.trade_stops_level * point)
@@ -96,34 +106,55 @@ class TradeExecutor:
             return {"ok": False, "reason": "lot_calc_zero"}
 
         request = {
-            "action":   mt5.TRADE_ACTION_DEAL,
-            "symbol":   symbol,
-            "volume":   lot,
-            "type":     order_type,
-            "price":    self._pip_round(price, digits),
-            "sl":       sl,
-            "tp":       tp,
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": order_type,
+            "price": self._pip_round(price, digits),
+            "sl": sl,
+            "tp": tp,
             "deviation": 20,
-            "magic":    self.s.magic,
-            "comment":  self.s.order_comment,
+            "magic": self.s.magic,
+            "comment": self.s.order_comment,
             "type_time": mt5.ORDER_TIME_GTC,
             "type_filling": self._pick_fill_mode(sym),
         }
 
         if self.s.dry_run:
             logger.info(f"[DRY] {symbol} {side} lot={lot} @ {price} SL={sl} TP={tp}")
-            return {"ok": True, "dry": True, "price": price, "sl": sl, "tp": tp, "lot": lot}
+            return {
+                "ok": True,
+                "dry": True,
+                "price": price,
+                "sl": sl,
+                "tp": tp,
+                "lot": lot,
+            }
 
         result = mt5.order_send(request)
         if result is None:
             return {"ok": False, "reason": "order_send_none"}
 
         if result.retcode == mt5.TRADE_RETCODE_DONE:
-            logger.info(f"[LIVE] {symbol} {side} lot={lot} @ {price} SL={sl} TP={tp} | ticket={getattr(result, 'order', None)}")
+            logger.info(
+                f"[LIVE] {symbol} {side} lot={lot} @ {price} SL={sl} TP={tp} | ticket={getattr(result, 'order', None)}"
+            )
             return {
-                "ok": True, "dry": False, "price": price, "sl": sl, "tp": tp, "lot": lot,
-                "ticket": getattr(result, "order", None), "deal": getattr(result, "deal", None),
+                "ok": True,
+                "dry": False,
+                "price": price,
+                "sl": sl,
+                "tp": tp,
+                "lot": lot,
+                "ticket": getattr(result, "order", None),
+                "deal": getattr(result, "deal", None),
             }
         else:
-            logger.error(f"order_send failed: retcode={result.retcode}, comment={getattr(result,'comment',None)}")
-            return {"ok": False, "reason": f"retcode={result.retcode}", "comment": getattr(result, "comment", None)}
+            logger.error(
+                f"order_send failed: retcode={result.retcode}, comment={getattr(result,'comment',None)}"
+            )
+            return {
+                "ok": False,
+                "reason": f"retcode={result.retcode}",
+                "comment": getattr(result, "comment", None),
+            }

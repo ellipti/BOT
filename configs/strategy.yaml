@@ -1,0 +1,134 @@
+# Trading Strategy Configuration
+# Backtest болон live trading-ийн параметрийн тохиргоо
+
+strategy:
+  name: "MA_Crossover_RSI"
+  description: "Moving Average Crossover with RSI confirmation"
+  version: "1.0"
+
+  # Core strategy parameters
+  parameters:
+    # Moving Average settings
+    ma_fast: 20
+    ma_slow: 50
+    ma_type: "sma" # sma, ema, wma
+
+    # RSI settings
+    rsi_period: 14
+    rsi_oversold: 30
+    rsi_overbought: 70
+
+    # ATR settings
+    atr_period: 14
+    atr_multiplier_sl: 2.0
+    atr_multiplier_tp: 3.0
+    min_atr_threshold: 0.0001
+
+    # Risk management
+    risk_per_trade: 0.01 # 1% of balance
+    max_open_positions: 1
+
+    # Session filtering
+    trading_sessions:
+      - name: "London"
+        start: "08:00"
+        end: "17:00"
+        enabled: true
+      - name: "NewYork"
+        start: "13:00"
+        end: "22:00"
+        enabled: true
+      - name: "Asian"
+        start: "00:00"
+        end: "09:00"
+        enabled: false
+
+# Backtest configuration
+backtest:
+  # Data settings
+  data:
+    symbol: "XAUUSD"
+    timeframe: "M30"
+    start_date: "2024-01-01"
+    end_date: "2024-12-31"
+
+  # Account settings
+  account:
+    initial_balance: 10000.0
+    commission: 0.0 # USD per lot
+    spread: 2.0 # points
+    leverage: 100
+
+  # Risk settings
+  risk:
+    max_daily_loss: 0.05 # 5% of balance
+    max_weekly_loss: 0.15 # 15% of balance
+    cooldown_minutes: 30
+
+  # Validation settings
+  validation:
+    in_sample_ratio: 0.7 # 70% for training/optimization
+    out_sample_ratio: 0.3 # 30% for validation
+    min_trades: 100 # Minimum trades for valid backtest
+
+  # Output settings
+  output:
+    generate_charts: true # PNG chart generation
+    save_csv: true # CSV export
+    output_dir: "reports" # Output directory
+
+# Grid search parameters for optimization
+optimization:
+  enabled: false
+
+  # Parameters to optimize
+  grid:
+    ma_fast: [10, 15, 20, 25, 30]
+    ma_slow: [40, 50, 60, 70]
+    rsi_oversold: [20, 25, 30, 35]
+    rsi_overbought: [65, 70, 75, 80]
+    atr_multiplier_sl: [1.5, 2.0, 2.5, 3.0]
+    atr_multiplier_tp: [2.0, 2.5, 3.0, 3.5, 4.0]
+
+  # Optimization objective
+  objective: "sharpe_ratio" # sharpe_ratio, profit_factor, max_drawdown
+
+  # Constraints
+  constraints:
+    min_win_rate: 0.3 # 30%
+    max_drawdown: 0.2 # 20%
+    min_trades: 50
+
+# Reporting configuration
+reporting:
+  # Output formats
+  formats:
+    - csv
+    - png
+    - html
+
+  # KPI metrics to calculate
+  metrics:
+    - total_return
+    - win_rate
+    - profit_factor
+    - sharpe_ratio
+    - sortino_ratio
+    - max_drawdown
+    - average_win
+    - average_loss
+    - total_trades
+    - winning_trades
+    - losing_trades
+
+  # Chart settings
+  charts:
+    equity_curve: true
+    drawdown_chart: true
+    monthly_returns: true
+    trade_distribution: true
+    win_loss_histogram: true
+
+  # Report customization
+  template: "default"
+  title_prefix: "Backtest Report"

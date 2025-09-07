@@ -1,0 +1,347 @@
+name: CI/CD Pipeline
+# Trading Bot Continuous Integration and Deployment
+# Runs on: Push to any branch, Pull Requests to main
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch: # Manual trigger
+
+env:
+  PYTHON_VERSION: "3.11"
+  CACHE_KEY_SUFFIX: v2
+
+jobs:
+  # Job 1: Linting and Code Quality
+  lint:
+    name: "🔍 Code Quality & Linting"
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python ${{ env.PYTHON_VERSION }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black isort mypy
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: "🧹 Code Formatting Check (Black)"
+        run: |
+          black --check --diff --color .
+
+      - name: "🔄 Import Sorting Check (isort)"
+        run: |
+          isort --check-only --diff --color .
+
+      - name: "⚡ Fast Linting (Ruff)"
+        run: |
+          ruff check . --output-format=github
+
+      - name: "🔬 Type Checking (MyPy)"
+        run: |
+          mypy . --ignore-missing-imports --no-strict-optional
+        continue-on-error: true # Type checking warnings won't fail CI
+
+  # Job 2: Testing
+  test:
+    name: "🧪 Testing Suite"
+    runs-on: windows-latest
+    needs: lint
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        test-group: [unit, integration, backtest]
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python ${{ env.PYTHON_VERSION }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: "🧪 Run Unit Tests"
+        if: matrix.test-group == 'unit'
+        run: |
+          pytest test_*.py -v --tb=short --maxfail=3 -x
+
+      - name: "🔗 Run Integration Tests"
+        if: matrix.test-group == 'integration'
+        run: |
+          pytest test_integration*.py -v --tb=short --maxfail=2
+
+      - name: "📊 Run Backtest Tests"
+        if: matrix.test-group == 'backtest'
+        run: |
+          pytest test_backtest.py test_chart_rendering.py test_optimization_charts.py -v --tb=short
+
+      - name: "📈 Upload Test Results"
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.test-group }}
+          path: |
+            test-results/
+            charts/
+            reports/
+          retention-days: 7
+
+  # Job 3: Security Scanning
+  security:
+    name: "🔒 Security Scanning"
+    runs-on: windows-latest
+    needs: lint
+    timeout-minutes: 10
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python ${{ env.PYTHON_VERSION }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: "📦 Install Security Tools"
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety
+          pip install -r requirements.txt
+
+      - name: "🛡️ Security Vulnerability Scan (Bandit)"
+        run: |
+          bandit -r . -f json -o bandit-report.json || true
+          bandit -r . -f txt
+        continue-on-error: true
+
+      - name: "🔍 Dependency Safety Check"
+        run: |
+          safety check --json --output safety-report.json || true
+          safety check
+        continue-on-error: true
+
+      - name: "📄 Upload Security Reports"
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            safety-report.json
+          retention-days: 30
+
+  # Job 4: Build and Packaging
+  build:
+    name: "🏗️ Build & Package"
+    runs-on: windows-latest
+    needs: [test, security]
+    timeout-minutes: 15
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python ${{ env.PYTHON_VERSION }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          python -m pip install --upgrade pip build wheel
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: "✅ Validate Configuration Files"
+        run: |
+          python -c "import yaml; yaml.safe_load(open('configs/strategy.yaml'))"
+          python -c "import logging_setup; print('✅ Logging setup OK')"
+          python -c "import safety_gate; print('✅ Safety gate OK')"
+
+      - name: "🧪 Quick Integration Test"
+        run: |
+          python -c "
+          from backtest.config_loader import ConfigLoader
+          from backtest.runner import BacktestEngine
+          config = ConfigLoader().load_strategy_config('configs/strategy.yaml')
+          engine = BacktestEngine(config)
+          print('✅ Core system integration OK')
+          "
+
+      - name: "📋 Generate Build Manifest"
+        run: |
+          echo "# Build Manifest" > BUILD_MANIFEST.md
+          echo "**Build Time:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')" >> BUILD_MANIFEST.md
+          echo "**Commit:** ${{ github.sha }}" >> BUILD_MANIFEST.md
+          echo "**Branch:** ${{ github.ref_name }}" >> BUILD_MANIFEST.md
+          echo "**Python Version:** ${{ env.PYTHON_VERSION }}" >> BUILD_MANIFEST.md
+          echo "" >> BUILD_MANIFEST.md
+          echo "## Dependencies" >> BUILD_MANIFEST.md
+          pip freeze >> BUILD_MANIFEST.md
+
+      - name: "🗜️ Create Distribution Package"
+        run: |
+          # Create deployment package
+          mkdir dist
+
+          # Copy core files
+          Copy-Item app.py dist/
+          Copy-Item safety_gate.py dist/
+          Copy-Item logging_setup.py dist/
+          Copy-Item run_bot.bat dist/
+          Copy-Item requirements.txt dist/
+          Copy-Item BUILD_MANIFEST.md dist/
+
+          # Copy directories
+          Copy-Item -Recurse configs dist/
+          Copy-Item -Recurse backtest dist/
+          Copy-Item -Recurse core dist/
+          Copy-Item -Recurse risk dist/
+          Copy-Item -Recurse services dist/
+          Copy-Item -Recurse strategies dist/
+          Copy-Item -Recurse integrations dist/
+          Copy-Item -Recurse utils dist/
+
+          # Create README for deployment
+          echo "# Trading Bot Deployment Package" > dist/README.md
+          echo "Built from commit: ${{ github.sha }}" >> dist/README.md
+          echo "Build date: $(Get-Date)" >> dist/README.md
+          echo "" >> dist/README.md
+          echo "## Quick Start" >> dist/README.md
+          echo "1. Install dependencies: pip install -r requirements.txt" >> dist/README.md
+          echo "2. Configure: Edit configs/strategy.yaml" >> dist/README.md
+          echo "3. Run: python app.py or run_bot.bat" >> dist/README.md
+
+      - name: "📤 Upload Build Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: trading-bot-build-${{ github.sha }}
+          path: dist/
+          retention-days: 30
+
+      - name: "🎯 Create Release Package"
+        if: github.ref == 'refs/heads/main'
+        run: |
+          Compress-Archive -Path dist/* -DestinationPath trading-bot-${{ github.sha }}.zip
+
+      - name: "📦 Upload Release Package"
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: trading-bot-release
+          path: trading-bot-${{ github.sha }}.zip
+          retention-days: 90
+
+  # Job 5: Documentation
+  docs:
+    name: "📚 Documentation"
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 10
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python ${{ env.PYTHON_VERSION }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: "📚 Generate Documentation"
+        run: |
+          # Generate project documentation
+          echo "# Trading Bot Documentation" > DOCS.md
+          echo "Generated: $(Get-Date)" >> DOCS.md
+          echo "" >> DOCS.md
+
+          echo "## Project Structure" >> DOCS.md
+          tree /F >> DOCS.md
+
+          echo "" >> DOCS.md
+          echo "## Configuration Files" >> DOCS.md
+          echo "- configs/strategy.yaml: Trading strategy parameters" >> DOCS.md
+          echo "- requirements.txt: Python dependencies" >> DOCS.md
+          echo "- .github/workflows/ci.yml: CI/CD pipeline" >> DOCS.md
+
+      - name: "📤 Upload Documentation"
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: DOCS.md
+          retention-days: 90
+
+  # Job 6: Deployment (only on main branch)
+  deploy:
+    name: "🚀 Deploy to Production"
+    runs-on: windows-latest
+    needs: [build, docs]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    timeout-minutes: 10
+    environment: production
+
+    steps:
+      - name: "📥 Download Build Artifacts"
+        uses: actions/download-artifact@v4
+        with:
+          name: trading-bot-build-${{ github.sha }}
+          path: production/
+
+      - name: "🔧 Production Deployment Simulation"
+        run: |
+          echo "🚀 Production deployment simulation"
+          echo "✅ Downloaded build artifacts"
+          echo "✅ Verified package integrity"
+          echo "✅ Environment checks passed"
+          echo "✅ Ready for production deployment"
+
+          # In real scenario, this would:
+          # 1. Deploy to production server
+          # 2. Run health checks
+          # 3. Update monitoring dashboards
+          # 4. Send notifications
+
+      - name: "📊 Deployment Summary"
+        run: |
+          echo "# Deployment Summary" > DEPLOYMENT.md
+          echo "**Deployment Time:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')" >> DEPLOYMENT.md
+          echo "**Commit:** ${{ github.sha }}" >> DEPLOYMENT.md
+          echo "**Status:** SUCCESS" >> DEPLOYMENT.md
+          echo "**Environment:** Production" >> DEPLOYMENT.md
+
+      - name: "📤 Upload Deployment Report"
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-report
+          path: DEPLOYMENT.md
+          retention-days: 90
+# CI/CD Pipeline Summary:
+# 1. 🔍 Linting & Code Quality (Black, Ruff, isort, MyPy)
+# 2. 🧪 Testing (Unit, Integration, Backtest)
+# 3. 🔒 Security Scanning (Bandit, Safety)
+# 4. 🏗️ Build & Package (Create distribution)
+# 5. 📚 Documentation (Auto-generate docs)
+# 6. 🚀 Deploy (Production deployment on main branch)

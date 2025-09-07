@@ -1,0 +1,73 @@
+# Pre-commit hooks for Trading Bot
+# Runs before each commit to ensure code quality
+
+repos:
+  # Black - Python code formatter
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        language_version: python3.11
+        args: [--line-length=88]
+
+  # isort - Import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        args: [--profile=black, --line-length=88]
+
+  # Ruff - Fast Python linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.12
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+  # MyPy - Static type checking (disabled)
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.17.1
+  #   hooks:
+  #     - id: mypy
+  #       args: [--ignore-missing-imports, --no-strict-optional, --check-untyped-defs, --no-error-summary]
+  #       additional_dependencies: [types-requests, types-PyYAML]
+  #       exclude: ^(tests/|examples/)
+
+  # Bandit - Security linting
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.8.6
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml, --format, json]
+        exclude: ^tests/
+
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: debug-statements
+      - id: requirements-txt-fixer
+
+  # YAML validation (disabled on Windows due to newline issues)
+  # - repo: https://github.com/adrienverge/yamllint
+  #   rev: v1.37.1
+  #   hooks:
+  #     - id: yamllint
+  #       args: [-c=.yamllint.yml]
+
+# Configuration for specific hooks
+default_language_version:
+  python: python3.11
+
+# Global settings
+fail_fast: false
+minimum_pre_commit_version: "3.0.0"

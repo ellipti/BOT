@@ -1,14 +1,20 @@
 # services/telegram.py
 from __future__ import annotations
+
 import os
+
 import requests
-from core.logger import get_logger
 from settings import settings
+
+from core.logger import get_logger
 
 logger = get_logger("telegram")
 
+
 class TelegramClient:
-    def __init__(self, token: str | None = None, chat_id: str | None = None, timeout: int = 10):
+    def __init__(
+        self, token: str | None = None, chat_id: str | None = None, timeout: int = 10
+    ):
         self.token = token or settings.TELEGRAM_BOT_TOKEN
         self.chat_id = chat_id or settings.TELEGRAM_CHAT_ID
         self.timeout = timeout
@@ -21,7 +27,9 @@ class TelegramClient:
             return False
         try:
             url = f"https://api.telegram.org/bot{self.token}/sendMessage"
-            r = requests.post(url, json={"chat_id": self.chat_id, "text": text}, timeout=self.timeout)
+            r = requests.post(
+                url, json={"chat_id": self.chat_id, "text": text}, timeout=self.timeout
+            )
             if r.ok:
                 return True
             logger.error(f"Telegram send failed: {r.status_code} | {r.text}")
