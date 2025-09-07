@@ -112,6 +112,11 @@ class TradingSettings(BaseSettings):
     cooldown_multiplier: PositiveFloat = Field(
         default=1.0, alias="cooldown_mult", description="Cooldown period multiplier"
     )
+
+    # ATR Configuration
+    atr_period: PositiveInt = Field(
+        default=14, description="ATR calculation period (bars)"
+    )
     min_atr: PositiveFloat = Field(
         default=1.2, description="Minimum ATR required for trading"
     )
@@ -364,6 +369,12 @@ class ApplicationSettings(BaseSettings):
         default=True, description="Enable event-driven pipeline architecture"
     )
 
+    # Idempotency and reliability
+    idempotency_db: str = Field(
+        default="infra/id_store.sqlite",
+        description="SQLite database path for idempotent order execution",
+    )
+
     # Component settings
     mt5: MT5Settings = Field(default_factory=MT5Settings)
     trading: TradingSettings = Field(default_factory=TradingSettings)
@@ -456,6 +467,7 @@ class LegacySettings:
             "RISK_PCT": lambda: self._settings.trading.risk_percentage,
             "SESSION": lambda: self._settings.trading.session.value,
             "COOLDOWN_MULT": lambda: self._settings.trading.cooldown_multiplier,
+            "ATR_PERIOD": lambda: self._settings.trading.atr_period,
             "MIN_ATR": lambda: self._settings.trading.min_atr,
             "SL_MULT": lambda: self._settings.trading.stop_loss_multiplier,
             "TP_MULT": lambda: self._settings.trading.take_profit_multiplier,
