@@ -9,6 +9,7 @@ As requested by "[ROLE] Quant/Risk Engineer", I have successfully implemented Ri
 ### 1. RiskGovernorV2 Class (`risk/governor_v2.py`)
 
 **Stateful Counters (In-Memory + Persistent):**
+
 - ✅ `consecutive_losses`: Tracks continuous loss streak
 - ✅ `trades_today`: Daily session trade counter with auto-reset
 - ✅ `last_loss_ts`: Timestamp of last loss for cooldown calculation
@@ -17,6 +18,7 @@ As requested by "[ROLE] Quant/Risk Engineer", I have successfully implemented Ri
 - ✅ **Atomic I/O Persistence**: All state persisted via `atomic_write_json`
 
 **Core API:**
+
 ```python
 class RiskGovernorV2:
     def can_trade(self, now: datetime) -> tuple[bool, str|None]
@@ -35,6 +37,7 @@ class RiskGovernorV2:
 ### 3. Settings Integration (`config/settings.py`)
 
 Added new RiskSettings fields:
+
 ```python
 RISK_MAX_CONSECUTIVE_LOSSES_V2: int = 3
 RISK_MAX_TRADES_PER_SESSION: int = 5
@@ -49,16 +52,19 @@ NEWS_BLACKOUT_MAP: dict = {
 ### 4. EventBus Integration (`app/pipeline.py`)
 
 **Signal Processing Enhancement:**
+
 - ✅ `governor.can_trade(now)` check in `_handle_signal_detected`
 - ✅ `TradeBlocked` event published when blocked
 - ✅ Telegram ops alert: `/!\ Risk block: {reason}` prefix
 
 **Event Handlers:**
+
 - ✅ `TradeClosed` → `governor.on_trade_closed(pnl, now)`
 - ✅ `TradeBlocked` → Telegram alert with risk prefix
 - ✅ News/Calendar integration via `apply_news_blackout(impact, now)`
 
 **Metrics Integration:**
+
 - ✅ `trades_blocked` counter with reason labels
 - ✅ `consecutive_losses` gauge
 - ✅ `session_trades_today` gauge
@@ -76,6 +82,7 @@ class TradeBlocked(BaseEvent):
 ### 6. Enhanced Telegram Commands
 
 **New `/risk` Command:**
+
 - ✅ Session usage: `{trades_today}/{session_limit}`
 - ✅ Loss streak status with cooldown remaining
 - ✅ News blackout status with time remaining
@@ -83,6 +90,7 @@ class TradeBlocked(BaseEvent):
 - ✅ Response time < 2 seconds
 
 **Ops Alert Format:**
+
 ```
 /!\ Risk block: LOSS_STREAK_COOLDOWN (үлдсэн: 25.3 мин)
 Symbol: XAUUSD
@@ -94,6 +102,7 @@ Governor: v2
 ## 🧪 Comprehensive Testing
 
 ### Unit Tests (`tests/test_risk_governor_v2.py`)
+
 - ✅ **13/13 tests passing**
 - ✅ Loss streak progression and reset
 - ✅ Session limit enforcement
@@ -104,6 +113,7 @@ Governor: v2
 - ✅ Complex multi-condition scenarios
 
 ### Integration Tests
+
 - ✅ Complete governance flow validation
 - ✅ EventBus `TradeBlocked` event handling
 - ✅ Pipeline integration with signal processing
@@ -130,6 +140,7 @@ Integration Points:
 ## 🚦 Production Validation
 
 ### Blocking Logic Validation
+
 - ✅ **Session Limit**: 5/5 trades → immediate block
 - ✅ **Loss Streak**: 3 consecutive losses → 30-minute cooldown
 - ✅ **News Blackout**: High impact (90min), Medium (40min), Low (10min)
@@ -137,6 +148,7 @@ Integration Points:
 - ✅ **Loss Reset**: Win immediately clears consecutive loss counter
 
 ### Real-World Scenarios
+
 - ✅ Multiple blocking conditions prioritization
 - ✅ Daily session reset at midnight
 - ✅ State persistence across system restarts
@@ -144,6 +156,7 @@ Integration Points:
 - ✅ EventBus integration for downstream processing
 
 ### Performance & Reliability
+
 - ✅ **Atomic I/O**: Race-free state persistence
 - ✅ **Thread Safety**: Safe for concurrent access
 - ✅ **Error Handling**: Graceful degradation on invalid timestamps

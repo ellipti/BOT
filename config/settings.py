@@ -42,6 +42,21 @@ class LogLevel(str, Enum):
     ERROR = "ERROR"
 
 
+class FeedKind(str, Enum):
+    """Feed types for data source"""
+
+    LIVE = "live"
+    BACKTEST = "backtest"
+
+
+class SlippageKind(str, Enum):
+    """Slippage model types"""
+
+    FIXED = "fixed"
+    ATR = "atr"
+    NONE = "none"
+
+
 class MT5Settings(BaseSettings):
     """MetaTrader 5 connection settings"""
 
@@ -141,6 +156,50 @@ class TradingSettings(BaseSettings):
     )
 
     model_config = SettingsConfigDict(env_prefix="TRADING_", case_sensitive=False)
+
+
+class FeedSettings(BaseSettings):
+    """Feed configuration for data sources and execution simulation"""
+
+    # Feed type selection
+    feed_kind: FeedKind = Field(
+        default=FeedKind.LIVE, description="Data feed type: live MT5 or backtest CSV"
+    )
+
+    # Backtest data configuration
+    backtest_data_dir: str = Field(
+        default="data", description="Directory containing CSV backtest data files"
+    )
+
+    # Slippage model configuration
+    slippage_kind: SlippageKind = Field(
+        default=SlippageKind.FIXED, description="Slippage model type"
+    )
+
+    # Fixed slippage parameters
+    fixed_slippage_pips: PositiveFloat = Field(
+        default=1.0, description="Fixed slippage in pips"
+    )
+
+    pip_size: PositiveFloat = Field(
+        default=0.1, description="Pip size for the trading instrument"
+    )
+
+    # ATR-based slippage parameters
+    atr_slippage_percentage: PositiveFloat = Field(
+        default=2.0, description="Slippage as percentage of ATR"
+    )
+
+    # Spread and fees
+    spread_pips: PositiveFloat = Field(
+        default=10.0, description="Bid-ask spread in pips"
+    )
+
+    fee_per_lot: float = Field(
+        default=0.0, ge=0.0, description="Commission fee per lot traded"
+    )
+
+    model_config = SettingsConfigDict(env_prefix="FEED_", case_sensitive=False)
 
 
 class SafetySettings(BaseSettings):
@@ -439,6 +498,7 @@ class ApplicationSettings(BaseSettings):
     # Component settings
     mt5: MT5Settings = Field(default_factory=MT5Settings)
     trading: TradingSettings = Field(default_factory=TradingSettings)
+    feed: FeedSettings = Field(default_factory=FeedSettings)
     safety: SafetySettings = Field(default_factory=SafetySettings)
     risk: RiskSettings = Field(default_factory=RiskSettings)  # Upgrade #07
     telegram: TelegramSettings = Field(default_factory=TelegramSettings)
