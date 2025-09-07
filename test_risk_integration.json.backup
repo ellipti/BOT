@@ -1,0 +1,21 @@
+{
+  "daily_metrics": {
+    "loss": 5.0,
+    "trades": 5,
+    "consecutive_losses": 5,
+    "last_trade_time": 1757252416.0758023
+  },
+  "weekly_metrics": {
+    "loss": 5.0,
+    "trades": 5
+  },
+  "circuit_breaker": {
+    "state": "open",
+    "triggered_at": 1757252416.0758102,
+    "recovery_time": 1757266816.075811
+  },
+  "last_reset": {
+    "daily": "2025-09-07",
+    "weekly": "2025-W36"
+  }
+}

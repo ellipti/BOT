@@ -1,14 +1,27 @@
 # services/trade_logging.py
-import os, csv
-from datetime import datetime, timezone
+import csv
+import os
+from datetime import UTC, datetime
+
 
 def append_trade_row(**kw) -> None:
     os.makedirs("trades", exist_ok=True)
     path = os.path.join("trades", "trades.csv")
     is_new = not os.path.exists(path)
-    cols = ["time_utc","symbol","side","lot","entry","sl","tp","reason","ticket","dry_run"]
+    cols = [
+        "time_utc",
+        "symbol",
+        "side",
+        "lot",
+        "entry",
+        "sl",
+        "tp",
+        "reason",
+        "ticket",
+        "dry_run",
+    ]
     row = {
-        "time_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        "time_utc": datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
         "symbol": kw.get("symbol"),
         "side": kw.get("side"),
         "lot": kw.get("lot"),

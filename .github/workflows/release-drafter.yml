@@ -1,0 +1,41 @@
+name: Release Drafter
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  update_release_draft:
+    name: 📝 Update Release Draft
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📝 Update Release Draft
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+          disable-autolabeler: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Release Summary
+        run: |
+          echo "## 📝 Release Draft Updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Release notes have been automatically updated based on:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Conventional commit messages" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ PR labels and titles" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Contributor information" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check the [Releases](https://github.com/${{ github.repository }}/releases) page for the draft." >> $GITHUB_STEP_SUMMARY

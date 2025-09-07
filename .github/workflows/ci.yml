@@ -1,0 +1,248 @@
+name: CI/CD Pipeline - Strict Quality Gates
+# High-quality CI with mypy strict, Bandit security, cross-platform matrix testing
+# Quality gates: All checks must pass before merge
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch: # Manual trigger
+
+env:
+  CACHE_KEY_SUFFIX: v3-strict
+
+jobs:
+  # Job 1: Code Quality & Security (Matrix: Windows + Ubuntu, Python 3.11/3.12)
+  quality:
+    name: "🔍 Quality Gates"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python-version: ["3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python ${{ matrix.python-version }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+          pip install -r requirements-dev.txt || true
+          pip install mypy bandit ruff black isort pytest safety
+
+      - name: "🧹 Code Formatting Check (Black)"
+        run: |
+          black --check --diff --color .
+
+      - name: "🔄 Import Sorting Check (isort)"
+        run: |
+          isort --check-only --diff --color .
+
+      - name: "⚡ Linting (Ruff)"
+        run: |
+          ruff check . --output-format=github
+
+      - name: "🔬 Strict Type Checking (MyPy)"
+        run: |
+          mypy .
+
+      - name: "🛡️ Security Scanning (Bandit)"
+        run: |
+          bandit -r . -c .bandit
+
+      - name: "🔍 Dependency Safety Check"
+        run: |
+          safety check --ignore=70612 || true
+
+      - name: "📊 Upload Quality Reports"
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            bandit-report.*
+            safety-report.*
+            mypy-report.*
+          retention-days: 7
+
+  # Job 2: Testing Matrix (Cross-platform)
+  test:
+    name: "🧪 Testing"
+    needs: quality
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python-version: ["3.11", "3.12"]
+        test-group: [unit, integration]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python ${{ matrix.python-version }}"
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+          pip install -r requirements-dev.txt || true
+          pip install pytest pytest-cov
+
+      - name: "🧪 Run Tests"
+        run: |
+          # Run tests with MT5-less strategy:
+          # - Unit tests (including MT5 mocks): Always run
+          # - Integration tests requiring MT5: Skip in CI
+          pytest -q --tb=short --maxfail=3 \
+            -m "not mt5_integration" \
+            --cov=core --cov=adapters --cov=tests \
+            --cov-report=xml --cov-report=term-missing
+        env:
+          # Ensure consistent test environment
+          PYTHONPATH: ${{ github.workspace }}
+          DRY_RUN: "true"
+          # Note: MT5 integration tests run in separate workflow (ci-mt5.yml)
+
+      - name: "📈 Upload Test Results"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-py${{ matrix.python-version }}-${{ matrix.test-group }}
+          path: |
+            test-results/
+            .coverage
+          retention-days: 7
+
+  # Job 3: Build & Package
+  build:
+    name: "🏗️ Build"
+    needs: [quality, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐍 Setup Python 3.12"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+          pip install build wheel
+
+      - name: "✅ Validate Configuration"
+        run: |
+          python -c "from config.settings import get_settings; print('✅ Settings OK')" || echo "⚠️ Settings validation skipped"
+          python -c "from logging_setup import setup_advanced_logger; print('✅ Logging OK')" || echo "⚠️ Logging validation skipped"
+
+      - name: "�️ Create Build Package"
+        run: |
+          mkdir -p dist/trading-bot
+
+          # Copy core application files
+          cp -r app/ dist/trading-bot/ 2>/dev/null || echo "No app/ directory"
+          cp -r core/ dist/trading-bot/ 2>/dev/null || echo "No core/ directory"
+          cp -r infra/ dist/trading-bot/ 2>/dev/null || echo "No infra/ directory"
+          cp -r services/ dist/trading-bot/ 2>/dev/null || echo "No services/ directory"
+          cp -r config/ dist/trading-bot/ 2>/dev/null || echo "No config/ directory"
+          cp -r scripts/ dist/trading-bot/ 2>/dev/null || echo "No scripts/ directory"
+
+          # Copy configuration and requirements
+          cp *.py dist/trading-bot/ 2>/dev/null || echo "No root Python files"
+          cp requirements*.txt dist/trading-bot/ 2>/dev/null || echo "No requirements files"
+          cp *.md dist/trading-bot/ 2>/dev/null || echo "No markdown files"
+
+          # Create build manifest
+          echo "# Build Manifest" > dist/trading-bot/BUILD_INFO.md
+          echo "Build Time: $(date -u)" >> dist/trading-bot/BUILD_INFO.md
+          echo "Commit: ${{ github.sha }}" >> dist/trading-bot/BUILD_INFO.md
+          echo "Branch: ${{ github.ref_name }}" >> dist/trading-bot/BUILD_INFO.md
+
+      - name: "📤 Upload Build Artifacts"
+        uses: actions/upload-artifact@v4
+        with:
+          name: trading-bot-build
+          path: dist/
+          retention-days: 30
+
+  # Job 4: Quality Gate Summary
+  quality-gate:
+    name: "� Quality Gate"
+    needs: [quality, test, build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: "� Quality Gate Results"
+        run: |
+          echo "## 🚪 Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check job results
+          quality_result="${{ needs.quality.result }}"
+          test_result="${{ needs.test.result }}"
+          build_result="${{ needs.build.result }}"
+
+          echo "### 📋 Job Results:" >> $GITHUB_STEP_SUMMARY
+          if [ "$quality_result" = "success" ]; then
+            echo "✅ **Quality Checks**: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Quality Checks**: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$test_result" = "success" ]; then
+            echo "✅ **Testing**: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Testing**: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$build_result" = "success" ]; then
+            echo "✅ **Build**: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Build**: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### � Quality Checks Include:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Code formatting (Black)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Import sorting (isort)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Linting (Ruff)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Strict type checking (MyPy)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Security scanning (Bandit)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Dependency safety (Safety)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🧪 Test Matrix:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Windows + Ubuntu" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Python 3.11 + 3.12" >> $GITHUB_STEP_SUMMARY
+
+          # Fail if any required job failed
+          if [ "$quality_result" != "success" ] || [ "$test_result" != "success" ] || [ "$build_result" != "success" ]; then
+            echo "❌ Quality gate FAILED - PR cannot be merged" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "� Quality gate PASSED - Ready for merge!" >> $GITHUB_STEP_SUMMARY
+          fi

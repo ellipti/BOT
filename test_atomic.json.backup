@@ -1,0 +1,9 @@
+{
+  "test": "atomic_operations",
+  "timestamp": 1757249680.537778,
+  "data": {
+    "nested": {
+      "value": 123
+    }
+  }
+}

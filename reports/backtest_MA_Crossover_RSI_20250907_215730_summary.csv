@@ -1,0 +1,2 @@
+Strategy,Start Date,End Date,Initial Balance,Final Balance,Total Return,Total Trades,Win Rate,Profit Factor,Sharpe Ratio,Max Drawdown,Average Win,Average Loss,Largest Win,Largest Loss
+MA_Crossover_RSI,2024-01-02,2024-12-31,10000.0,8557.832336099882,-14.42%,187,41.18%,0.87,-0.04,29.05%,$128.05,$102.75,$404.08,$-1347.26

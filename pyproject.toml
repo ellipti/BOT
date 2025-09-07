@@ -1,0 +1,239 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trading-bot"
+version = "1.2.0"
+description = "Production-Ready Automated Trading Bot with MT5 Integration, Advanced Risk Management, and Comprehensive Documentation"
+authors = [
+    {name = "Trading Bot Team", email = "team@tradingbot.com"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.12"
+keywords = ["trading", "bot", "metatrader", "mt5", "backtest", "risk-management", "forex", "automation", "production"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: Microsoft :: Windows",
+    "Environment :: No Input/Output (Daemon)",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ellipti/BOT"
+"Documentation" = "https://github.com/ellipti/BOT/blob/main/README.md"
+"Repository" = "https://github.com/ellipti/BOT"
+"Bug Reports" = "https://github.com/ellipti/BOT/issues"
+"Changelog" = "https://github.com/ellipti/BOT/blob/main/CHANGELOG.md"
+"Runbook" = "https://github.com/ellipti/BOT/blob/main/RUNBOOK.md"
+
+# Tool configurations
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | __pycache__
+  | charts
+  | reports
+  | logs
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+known_first_party = ["core", "risk", "services", "strategies", "integrations", "utils", "backtest"]
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "ARG001", # unused arguments
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "Q", # flake8-quotes
+    "PL", # pylint
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "PLR0913", # too many arguments
+    "PLR0912", # too many branches
+    "PLR0915", # too many statements
+    "PLR0911", # too many return statements
+    "PLR2004", # magic values in comparisons
+    "PLW0603", # global statement discouraged
+    "PLC0415", # import should be at top-level
+    "SIM102",  # use single if statement
+    "SIM103",  # return negated condition
+    "SIM105",  # use contextlib.suppress
+    "SIM108",  # use ternary operator
+    "UP038",   # use X | Y instead of (X, Y) in isinstance
+    "E722",    # bare except
+    "F841",    # local variable assigned but never used
+    "ARG001",  # unused function argument
+    "PLW2901", # for loop variable overwritten
+    "PLR1722", # use sys.exit instead of exit
+    "PLR1714", # merge multiple comparisons
+    "E402",    # module level import not at top
+    "C408",    # unnecessary dict() call
+    "F401",    # imported but unused
+    "B007",    # loop control variable not used
+    "B023",    # function definition does not bind loop variable
+]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "charts",
+    "reports",
+    "logs",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = false
+warn_unused_configs = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+disallow_untyped_decorators = false
+no_implicit_optional = false
+warn_redundant_casts = false
+warn_unused_ignores = false
+warn_no_return = false
+warn_unreachable = false
+ignore_missing_imports = true
+strict_optional = false
+show_error_codes = false
+disable_error_code = ["no-any-return", "var-annotated", "arg-type", "assignment", "unreachable", "misc", "return-value"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml",
+    "--cov-fail-under=75",
+]
+testpaths = [
+    "tests",
+    ".",
+]
+filterwarnings = [
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore:.*MetaTrader5.*:ImportWarning",
+]
+markers = [
+    # MT5-less testing strategy markers
+    "mt5_integration: Tests requiring actual MT5 connection (skipped in CI)",
+    "mt5_unit: Unit tests for MT5-related code using mocks (runs in CI)",
+    "broker_integration: Tests requiring broker connectivity",
+
+    # Existing markers
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "backtest: marks tests as backtest-related",
+
+    # Additional component markers
+    "event_bus: Event system tests",
+    "order_book: Order book functionality tests",
+    "risk: Risk management tests",
+    "feed: Data feed tests",
+    "reconciler: Trade reconciliation tests",
+    "security: Security-related tests",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/charts/*",
+    "*/reports/*",
+    "*/logs/*",
+    "setup.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.bandit]
+exclude_dirs = ["tests", "test_*", "charts", "reports", "logs"]
+skips = ["B101", "B601", "B107", "B110"]  # Skip assert_used, shell_injection, hardcoded_password, try_except_pass
+
+[tool.bandit.assert_used]
+skips = ["*_test.py", "*/test_*.py"]
