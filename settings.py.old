@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     # MT5
     MT5_TERMINAL_PATH: str | None = None
-    MT5_LOGIN: int | None = None 
+    MT5_LOGIN: int | None = None
     MT5_PASSWORD: str | None = None
     MT5_SERVER: str | None = None
     ATTACH_MODE: bool = True  # Default: attach to running terminal
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     TRADE_LOG_ENABLED: bool = True
     TELEGRAM_ERROR_ALERTS: bool = True
 
-    # PnL коэффициент 
+    # PnL коэффициент
     USD_PER_LOT_PER_USD_MOVE: float = 100.0
 
     model_config = SettingsConfigDict(

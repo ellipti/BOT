@@ -5,7 +5,19 @@ __pycache__/
 .Python
 env/
 venv/
-.env
+.venv*/
+
+# Security & Secrets - DO NOT COMMIT
+.env*
+*.env
+!.env.example
+*.key
+*.pem
+*.p12
+*.keystore
+secrets.txt
+secrets/
+credentials.json
 
 # IDE
 .idea/
@@ -21,5 +33,23 @@ logs/
 *.dat
 *.ini
 
+# Database & State
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups
+*.backup
+*.bak
+
+# Reports & Charts
+reports/
+charts/
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
 # Other
 .DS_Store
+Thumbs.db

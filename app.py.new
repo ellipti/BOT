@@ -17,20 +17,20 @@ logger = setup_logger()
 def run_diag(mt5c: MT5Client):
     """Test MT5 connectivity and basic data fetching."""
     logger.info("Running diagnostic mode...")
-    
+
     # Check MT5 connection
     snap = mt5c.account_snapshot()
     if not snap:
         logger.error("MT5 account snapshot failed!")
         return False
-    
+
     # Test data fetch
     df = mt5c.get_rates(settings.SYMBOL, "M30", count=10)
     if df.empty:
         logger.error(f"Failed to fetch {settings.SYMBOL} rates!")
         return False
     logger.info(f"Successfully fetched {len(df)} bars for {settings.SYMBOL}")
-    
+
     return True
 
 def run_once():
@@ -44,23 +44,23 @@ def run_once():
     ):
         logger.error("MT5 холбогдож чадсангүй. Terminal нээж login хийсэн эсэхийг шалгана уу.")
         return False
-        
+
     # Handle --diag flag
     if len(sys.argv) > 1 and sys.argv[1] == "--diag":
         success = run_diag(mt5c)
         mt5c.shutdown()
         return success
-        
+
     # Make sure charts directory exists
     os.makedirs("charts", exist_ok=True)
-        
+
     # Дансны мэдээлэл харуулах
     snap = mt5c.account_snapshot()
     if not snap:
         logger.error("Failed to get account snapshot!")
         mt5c.shutdown()
         return False
-    
+
     account_balance = float(snap.get("balance", 0.0))
 
     # Initialize Telegram if configured
@@ -107,7 +107,7 @@ def run_once():
     ma20 = float(df["MA20"].iloc[-1]) if not df["MA20"].isna().all() else float("nan")
     ma50 = float(df["MA50"].iloc[-1]) if not df["MA50"].isna().all() else float("nan")
     rsi14 = rsi(df["close"], period=14)
-    
+
     # Base message for logging
     base_msg = f"[{settings.SYMBOL}] close={last_close:.2f} | atr={a:.5f} | signal={sig['signal']} | {sig['reason']}"
     logger.info(base_msg)
@@ -138,14 +138,14 @@ def run_once():
             sl=decision.sl_points,
             tp=decision.tp_points
         )
-        
+
         if res["ok"]:
             guard.mark_trade(decision.action)
             logger.info("Trade placed and cooldown marked by safety gate.")
-            
+
             if tg:
                 t = "DRY" if settings.DRY_RUN else f"TICKET {res['ticket']}"
-                
+
                 # Re-render chart with Entry/SL/TP annotations
                 try:
                     overlays_anno = overlays.copy()
@@ -158,12 +158,12 @@ def run_once():
                         df.tail(200), overlays_anno, out_png_rel,
                         f"{settings.SYMBOL} {decision.action}"
                     )
-                    
+
                     # Send notifications
                     tg.send(f"{base_msg}\n→ {t} | lot={decision.lot} | "
                            f"SL={decision.sl_points:.2f} | TP={decision.tp_points:.2f}")
                     tg.send_photo(out_png_anno, caption=f"{settings.SYMBOL} {decision.action} {t}")
-                    
+
                 except Exception as e:
                     logger.exception("Failed to render/send annotated chart: %s", e)
         else:

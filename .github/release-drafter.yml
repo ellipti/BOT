@@ -1,0 +1,93 @@
+name-template: "AIVO Bot v$NEXT_PATCH_VERSION"
+tag-template: "v$NEXT_PATCH_VERSION"
+
+categories:
+  - title: "🚀 Features"
+    labels:
+      - "feat"
+      - "feature"
+      - "enhancement"
+  - title: "🐛 Bug Fixes"
+    labels:
+      - "fix"
+      - "bug"
+      - "bugfix"
+  - title: "🛡️ Security"
+    labels:
+      - "security"
+      - "vulnerability"
+  - title: "🔧 Maintenance"
+    labels:
+      - "chore"
+      - "refactor"
+      - "docs"
+      - "ci"
+      - "build"
+  - title: "📈 Performance"
+    labels:
+      - "performance"
+      - "optimization"
+  - title: "🧪 Testing"
+    labels:
+      - "test"
+      - "tests"
+
+change-template: "- $TITLE (#$NUMBER) by @$AUTHOR"
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels:
+      - "major"
+      - "breaking"
+  minor:
+    labels:
+      - "minor"
+      - "feat"
+      - "feature"
+      - "enhancement"
+  patch:
+    labels:
+      - "patch"
+      - "fix"
+      - "bug"
+      - "chore"
+      - "docs"
+      - "refactor"
+      - "ci"
+      - "security"
+      - "performance"
+      - "test"
+
+template: |
+  ## 🎯 What's Changed
+
+  $CHANGES
+
+  ## 📊 Statistics
+
+  - **Contributors**: @$CONTRIBUTORS
+  - **Commits**: $UNCATEGORIZED_COUNT commits
+  - **Files Changed**: Check the diff for detailed changes
+
+  ## 🚀 Deployment Notes
+
+  This release has passed all quality gates:
+  - ✅ Strict type checking (MyPy)
+  - ✅ Security scanning (Bandit)
+  - ✅ Cross-platform testing (Windows + Ubuntu)
+  - ✅ Python 3.11/3.12 compatibility
+  - ✅ Code formatting and linting
+
+  ## 🔐 Security
+
+  All secrets are managed via OS keyring. Use the migration guide if upgrading from environment variables.
+
+  ## 📋 Installation
+
+  1. Download the release package
+  2. Install dependencies: `pip install -r requirements.txt`
+  3. Configure secrets: `python scripts/secret_set.py SECRET_NAME "value"`
+  4. Run: `python app.py`
+
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$NEXT_PATCH_VERSION

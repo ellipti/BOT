@@ -1,0 +1,11 @@
+{
+  "2025-09-01:XAUUSD": {
+    "trades": 0,
+    "baseline_equity": 3000.0,
+    "blocked": false
+  },
+  "2025-09-07:XAUUSD": {
+    "last_execution": 1757250732.5341346,
+    "test_field": "test_value"
+  }
+}

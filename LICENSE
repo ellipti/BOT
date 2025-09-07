@@ -1,0 +1,84 @@
+MIT License
+
+Copyright (c) 2025 Trading Bot Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+TRADING SOFTWARE DISCLAIMER
+================================================================================
+
+IMPORTANT: This software is designed for educational and research purposes.
+Trading financial instruments involves substantial risk and may not be suitable
+for all users. Past performance is not indicative of future results.
+
+By using this software, you acknowledge and agree that:
+
+1. RISK WARNING: Trading in financial markets involves substantial risk of loss
+   and may not be suitable for all investors. You should carefully consider
+   your investment objectives, level of experience, and risk appetite before
+   using this software.
+
+2. NO FINANCIAL ADVICE: This software is not intended to provide financial,
+   investment, trading, or any other type of advice. The software is provided
+   for informational and educational purposes only.
+
+3. USER RESPONSIBILITY: You are solely responsible for your trading decisions
+   and any resulting profits or losses. The authors and contributors of this
+   software are not responsible for any financial losses you may incur.
+
+4. NO WARRANTY: The software is provided "as is" without warranty of any kind.
+   There is no guarantee that the software will be profitable or perform as
+   expected under all market conditions.
+
+5. TESTING REQUIRED: You should thoroughly test any trading strategy using
+   paper trading or backtesting before risking real capital. Always start
+   with small position sizes when transitioning to live trading.
+
+6. REGULATORY COMPLIANCE: You are responsible for ensuring compliance with
+   all applicable laws and regulations in your jurisdiction regarding
+   automated trading and financial software.
+
+7. THIRD-PARTY SERVICES: This software may integrate with third-party services
+   (brokers, data providers, notification services). You are responsible for
+   your agreements with these services and any associated costs or risks.
+
+By using this software, you acknowledge that you have read, understood, and
+agree to these terms and the associated risks of automated trading.
+
+================================================================================
+COMPONENT LICENSES
+================================================================================
+
+This software includes components under various licenses:
+
+- Python: Python Software Foundation License
+- MetaTrader5: Licensed under MetaQuotes Software Corp. terms
+- pandas: BSD 3-Clause License
+- numpy: BSD License
+- matplotlib: Matplotlib License (BSD-style)
+- requests: Apache License 2.0
+- python-telegram-bot: LGPLv3 License
+- pydantic: MIT License
+- pytest: MIT License
+
+See requirements.txt for complete dependency list.
+
+Each component retains its original license. This MIT license applies only
+to the original code created for this trading bot project.

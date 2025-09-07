@@ -1,0 +1,1 @@
+exclude: 'tests,test_*.py,demo_*.py,debug_*.py,quick_*.py,.venv'

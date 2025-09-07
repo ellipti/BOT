@@ -1,5 +1,11 @@
-def calc_lot(balance_usd: float, risk_pct: float, atr_points: float, sl_mult: float,
-             tick_value_per_lot: float = 1.0, point_value: float = 0.1) -> float:
+def calc_lot(
+    balance_usd: float,
+    risk_pct: float,
+    atr_points: float,
+    sl_mult: float,
+    tick_value_per_lot: float = 1.0,
+    point_value: float = 0.1,
+) -> float:
     """
     XAUUSD жишээ: 1 point = $0.01; ихэнх брокер дээр 1 lot = $1/tick (~$1 per 0.1 move).
     Тодорхой бус бол өөрийн брокерийн tick_value_per_lot, point_value-г тааруул.

@@ -1,0 +1,21 @@
+{
+  "last_reset": {
+    "daily": "2025-09-07",
+    "weekly": "2025-W36"
+  },
+  "circuit_breaker": {
+    "state": "open",
+    "triggered_at": 1757251541.6348498,
+    "recovery_time": 1757265941.6348498
+  },
+  "daily_metrics": {
+    "loss": 8.5,
+    "trades": 1,
+    "consecutive_losses": 1,
+    "last_trade_time": 1757251541.634846
+  },
+  "weekly_metrics": {
+    "loss": 8.5,
+    "trades": 1
+  }
+}
