@@ -1,47 +1,51 @@
-import os
-from dataclasses import dataclass
-from typing import List, Optional
+from settings import settings
 
 def _to_bool(v: str | None) -> bool:
     if not v: return False
     return v.strip().lower() in ("1","true","yes","y","on")
 
-@dataclass
-class Settings:
-    # MT5 Connection
-    mt5_login: int
-    mt5_password: str
-    mt5_server: str
-    mt5_path: Optional[str]
-    symbols: List[str]
-    timeframe_str: str
-    telegram_token: Optional[str]
-    telegram_chat_id: Optional[str]
-    
-    # Risk Management
-    risk_per_trade: float
-    atr_period: int
-    sl_atr_mult: float
-    tp_r_mult: float
-    cooldown_minutes: int
-    dry_run: bool
-    magic_number: int
-    order_comment: str
-    filling_mode_str: Optional[str]
-    attach_mode: bool
-    
-    # Vision Analysis Settings
-    min_confidence: float = 0.60
-    min_risk_reward: float = 1.5
-    min_confluences: int = 2
-    max_spread_atr_ratio: float = 0.1
-    min_news_minutes: int = 30
-    
-    # OpenAI Settings
-    openai_api_key: Optional[str] = None
-    openai_model: str = "gpt-4-vision-preview"
-    max_tokens: int = 4096
-    temperature: float = 0.7
+class Strategy:
+    def __init__(self):
+        # MT5 Connection
+        self.mt5_login = int(settings.MT5_LOGIN)
+        self.mt5_password = settings.MT5_PASSWORD
+        self.mt5_server = settings.MT5_SERVER
+        self.mt5_path = settings.MT5_PATH or "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
+        self.attach_mode = _to_bool(settings.ATTACH_MODE)
+        
+        # Trading parameters
+        self.symbols = [s.strip() for s in settings.SYMBOLS.split(",") if s.strip()]
+        self.timeframe_str = settings.TIMEFRAME
+        
+        # Notifications
+        self.telegram_token = settings.TELEGRAM_BOT_TOKEN or None
+        self.telegram_chat_id = settings.TELEGRAM_CHAT_ID or None
+
+        # Risk management
+        self.risk_per_trade = float(settings.RISK_PER_TRADE)
+        self.atr_period = int(settings.ATR_PERIOD)
+        self.sl_atr_mult = float(settings.SL_ATR_MULTIPLIER)
+        self.tp_r_mult = float(settings.TP_R_MULTIPLIER)
+        self.cooldown_minutes = int(settings.COOLDOWN_MINUTES)
+        
+        # Execution
+        self.dry_run = _to_bool(settings.DRY_RUN)
+        self.magic_number = int(settings.MAGIC_NUMBER)
+        self.order_comment = settings.ORDER_COMMENT
+        self.filling_mode_str = settings.FILLING_MODE or None
+        
+        # Vision Analysis Settings
+        self.min_confidence = float(settings.MIN_CONFIDENCE)
+        self.min_risk_reward = float(settings.MIN_RISK_REWARD)
+        self.min_confluences = int(settings.MIN_CONFLUENCES)
+        self.max_spread_atr_ratio = float(settings.MAX_SPREAD_ATR_RATIO)
+        self.min_news_minutes = int(settings.MIN_NEWS_MINUTES)
+        
+        # OpenAI Settings
+        self.openai_api_key = settings.OPENAI_API_KEY
+        self.openai_model = settings.OPENAI_MODEL or "gpt-4-vision-preview"
+        self.max_tokens = int(settings.MAX_TOKENS)
+        self.temperature = float(settings.TEMPERATURE)
 
     @property
     def using_attach_mode(self) -> bool:
@@ -96,47 +100,3 @@ class Settings:
             return False, f"Need {self.cooldown_minutes} minutes between trades"
             
         return True, "Trade validated"
-
-def get_settings() -> Settings:
-    return Settings(
-        # MT5 connection
-        mt5_login=int(os.getenv("MT5_LOGIN", "0")),
-        mt5_password=os.getenv("MT5_PASSWORD", ""),
-        mt5_server=os.getenv("MT5_SERVER", ""),
-        mt5_path=os.getenv("MT5_PATH", "C:\\Program Files\\MetaTrader 5\\terminal64.exe"),
-        attach_mode=_to_bool(os.getenv("ATTACH_MODE", "false")),
-        
-        # Trading parameters
-        symbols=[s.strip() for s in os.getenv("SYMBOLS", os.getenv("SYMBOL", "XAUUSD")).split(",") if s.strip()],
-        timeframe_str=os.getenv("TIMEFRAME", "M30"),
-        
-        # Notifications
-        telegram_token=os.getenv("TELEGRAM_BOT_TOKEN") or None,
-        telegram_chat_id=os.getenv("TELEGRAM_CHAT_ID") or None,
-
-        # Risk management
-        risk_per_trade=float(os.getenv("RISK_PER_TRADE", "0.01")),
-        atr_period=int(os.getenv("ATR_PERIOD", "14")),
-        sl_atr_mult=float(os.getenv("SL_ATR_MULTIPLIER", "1.5")),
-        tp_r_mult=float(os.getenv("TP_R_MULTIPLIER", "2.0")),
-        cooldown_minutes=int(os.getenv("COOLDOWN_MINUTES", "60")),
-        
-        # Execution
-        dry_run=_to_bool(os.getenv("DRY_RUN", "true")),
-        magic_number=int(os.getenv("MAGIC_NUMBER", "20250831")),
-        order_comment=os.getenv("ORDER_COMMENT", "AIVO"),
-        filling_mode_str=os.getenv("FILLING_MODE") or None,
-        
-        # Vision Analysis Settings
-        min_confidence=float(os.getenv("MIN_CONFIDENCE", "0.60")),
-        min_risk_reward=float(os.getenv("MIN_RISK_REWARD", "1.5")),
-        min_confluences=int(os.getenv("MIN_CONFLUENCES", "2")),
-        max_spread_atr_ratio=float(os.getenv("MAX_SPREAD_ATR_RATIO", "0.1")),
-        min_news_minutes=int(os.getenv("MIN_NEWS_MINUTES", "30")),
-        
-        # OpenAI Settings
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        openai_model=os.getenv("OPENAI_MODEL", "gpt-4-vision-preview"),
-        max_tokens=int(os.getenv("MAX_TOKENS", "4096")),
-        temperature=float(os.getenv("TEMPERATURE", "0.7"))
-    )

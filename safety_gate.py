@@ -3,10 +3,82 @@ import os, json, time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from typing import Literal, Dict, Any, Optional
+from typing import Literal, Dict, Any, Optional, Tuple
+from settings import settings
 
 # ---- Тохиргоо (анхдагч) -----------------------------------------------------
 UB_TZ = ZoneInfo("Asia/Ulaanbaatar")
+
+class LimitsManager:
+    def __init__(self, path: str = "state/limits.json"):
+        self.path = path
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    def _load(self) -> dict:
+        if not os.path.exists(self.path): return {}
+        try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def _save(self, data: dict) -> None:
+        tmp = self.path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, self.path)
+
+    def _key(self, date_str: str, symbol: str) -> str:
+        return f"{date_str}:{symbol}"
+
+    def get_state(self, symbol: str, now_utc: datetime) -> dict:
+        d = self._load()
+        key = self._key(now_utc.strftime("%Y-%m-%d"), symbol)
+        return d.get(key, {"trades": 0, "baseline_equity": None, "blocked": False})
+
+    def set_state(self, symbol: str, now_utc: datetime, state: dict) -> None:
+        d = self._load()
+        key = self._key(now_utc.strftime("%Y-%m-%d"), symbol)
+        d[key] = state
+        self._save(d)
+
+    def ensure_baseline(self, symbol: str, now_utc: datetime, equity: float) -> None:
+        s = self.get_state(symbol, now_utc)
+        if s.get("baseline_equity") is None and equity and equity > 0:
+            s["baseline_equity"] = float(equity)
+            self.set_state(symbol, now_utc, s)
+
+    def mark_trade(self, symbol: str, now_utc: datetime) -> None:
+        s = self.get_state(symbol, now_utc)
+        s["trades"] = int(s.get("trades", 0)) + 1
+        self.set_state(symbol, now_utc, s)
+
+    def check_limits(self, symbol: str, now_utc: datetime, open_positions: int, equity: float) -> Tuple[bool, str]:
+        if not settings.LIMITS_ENABLED:
+            return True, ""
+        s = self.get_state(symbol, now_utc)
+        # 1) Хэрэв өмнө нь зогсоосон бол өнөөдөр HOLD
+        if s.get("blocked"):
+            return False, "Daily limits reached (blocked)"
+        # 2) Нээлттэй байрлалын дээд
+        if open_positions >= settings.MAX_OPEN_POSITIONS:
+            return False, f"Max open positions {open_positions}/{settings.MAX_OPEN_POSITIONS}"
+        # 3) Өдрийн гүйлгээний дээд
+        trades = int(s.get("trades", 0))
+        if trades >= settings.MAX_TRADES_PER_DAY:
+            return False, f"Max trades per day {trades}/{settings.MAX_TRADES_PER_DAY}"
+        # 4) Өдрийн алдагдлын дээд
+        base = s.get("baseline_equity")
+        if base is None and equity and equity > 0:
+            self.ensure_baseline(symbol, now_utc, equity)
+            base = equity
+        if base:
+            dd = max(0.0, (float(base) - float(equity)) / float(base) * 100.0)
+            if dd >= settings.MAX_DAILY_LOSS_PCT:
+                s["blocked"] = True
+                self.set_state(symbol, now_utc, s)
+                return False, f"Daily loss hit: {dd:.2f}% ≥ {settings.MAX_DAILY_LOSS_PCT}%"
+        return True, ""
 
 # XAUUSD-н түгээмэл гэрээний хэмжээ: 1 lot = 100 oz  →  $1 үнэ = ~$100/lot PnL
 USD_PER_LOT_PER_USD_MOVE = float(os.getenv("USD_PER_LOT_PER_USD_MOVE", 100))
@@ -84,6 +156,7 @@ class Guard:
         self.tp_mult = tp_mult
         self.news_window_min = news_window_min
         self.enable_news = enable_news
+        self.limits = LimitsManager()
 
     # ---------- Нийтийн API ----------
     def filter_decision(
@@ -96,9 +169,16 @@ class Guard:
         atr: float,
         balance_usd: float,
         now_utc: Optional[datetime] = None,
+        open_positions: int = 0,
+        equity_usd: float | None = None,
     ) -> Decision:
         """Шийдвэрийг бүх хамгаалалтаар шүүж, лот/SL/TP бэлдэнэ."""
         now_utc = now_utc or datetime.now(timezone.utc)
+        
+        # --- Check daily limits first ---
+        ok, reason = self.limits.check_limits(self.symbol, now_utc, open_positions, equity_usd or balance_usd)
+        if not ok:
+            return Decision(action="HOLD", reason=f"Limits: {reason}")
 
         # 1) Сешн
         if not self._in_session(now_utc):
@@ -184,9 +264,9 @@ class Guard:
         trend_up = ma_fast > ma_slow
         trend_dn = ma_fast < ma_slow
         if raw == "BUY":
-            return "BUY" if (trend_up and rsi >= 50 and close > ma_fast) else "HOLD"
+            return "BUY" if (trend_up and rsi >= 49 and close >= ma_fast - 0.2*atr) else "HOLD"
         if raw == "SELL":
-            return "SELL" if (trend_dn and rsi <= 50 and close < ma_fast) else "HOLD"
+            return "SELL" if (trend_dn and rsi <= 51 and close <= ma_fast + 0.2*atr) else "HOLD"
         return "HOLD"
 
     def _calc_lot(self, balance_usd: float, atr: float, sl_mult: float) -> float:

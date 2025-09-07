@@ -2,6 +2,7 @@ import time
 from typing import Optional
 import pandas as pd
 import MetaTrader5 as mt5
+import os
 
 from .logger import get_logger
 logger = get_logger("mt5")
@@ -10,8 +11,11 @@ class MT5Client:
     def __init__(self):
         self.initialized = False
 
-    def connect(self, login: int = 0, password: str = "", server: str = "", path: Optional[str] = None, attach_mode: bool = False) -> bool:
+    def connect(self, login: int = 0, password: str = "", server: str = "", path: Optional[str] = None, attach_mode: Optional[bool] = None) -> bool:
         try:
+            # Default: attach mode ON unless explicitly disabled
+            if attach_mode is None:
+                attach_mode = self._env_bool("ATTACH_MODE", default=True)
             # Log connection attempt (non-sensitive fields only)
             try:
                 logger.info(f"MT5 connect called | attach_mode={attach_mode} | path={path} | login_provided={bool(login)} | server_provided={bool(server)}")
@@ -19,7 +23,12 @@ class MT5Client:
                 # best-effort logging
                 logger.info("MT5 connect called")
             # Initialize MT5
-            ok = mt5.initialize(path) if path else mt5.initialize()
+            if attach_mode:
+                # ❗ DO NOT pass login/password in attach mode — just hook into the running terminal
+                # If path=None → attach to any running instance; if path given → try that binary
+                ok = mt5.initialize() if path is None else mt5.initialize(path)
+            else:
+                ok = mt5.initialize(path, login=login, password=password, server=server)
             if not ok:
                 logger.error(f"MT5 эхлүүлж чадсангүй: {mt5.last_error()}")
                 return False
@@ -124,16 +133,16 @@ class MT5Client:
             df["time"] = pd.to_datetime(df["time"], unit="s")
         return df
 
-    def get_positions(self):
+    def get_positions(self, symbol: str = None):
         """Return open positions (raw from MT5) and log a short summary."""
         try:
-            pos = mt5.positions_get()
+            pos = mt5.positions_get(symbol=symbol) if symbol else mt5.positions_get()
             if not pos:
-                logger.info("Open positions: none")
+                logger.info(f"Open positions{f' for {symbol}' if symbol else ''}: none")
                 return []
             # Log brief summary
             sample = [repr(p) for p in pos[:3]]
-            logger.info(f"Open positions: count={len(pos)} | sample={sample}")
+            logger.info(f"Open positions{f' for {symbol}' if symbol else ''}: count={len(pos)} | sample={sample}")
             return pos
         except Exception as e:
             logger.exception(f"Error fetching positions: {e}")
@@ -185,3 +194,7 @@ class MT5Client:
             mt5.shutdown()
             self.initialized = False
             logger.info("MT5-аас амжилттай салгалаа")
+
+    def _env_bool(self, name: str, default: bool = True) -> bool:
+        v = os.getenv(name, os.getenv(name.lower(), "true" if default else "false"))
+        return str(v).strip().lower() in ("1", "true", "yes", "y")

@@ -1,30 +1,18 @@
 import os
 import sys
-import glob
-import argparse
 from datetime import datetime, timezone
 import pandas as pd
 from core.logger import setup_logger
 from core.mt5_client import MT5Client
 from strategies.indicators import atr, rsi
-from safety_gate import Guard, Decision
+from safety_gate import Guard
 from strategies.baseline import ma_crossover_signal
 from services.telegram import TelegramClient
 from services.chart_renderer import render_chart_with_overlays
-from services.trade_logging import append_trade_row
 from settings import settings
-from utils.mt5_exec import place_market, compute_stops
-import MetaTrader5 as mt5
+from utils.mt5_exec import place_market
 
 logger = setup_logger()
-
-def latest_chart_path_for(symbol: str) -> str:
-    """Get the path to the most recently saved chart for a symbol."""
-    pattern = f"charts/{symbol}_*.png"
-    files = glob.glob(pattern)
-    if not files:
-        return ""
-    return max(files, key=os.path.getctime)
 
 def run_diag(mt5c: MT5Client):
     """Test MT5 connectivity and basic data fetching."""
@@ -47,21 +35,13 @@ def run_diag(mt5c: MT5Client):
 
 def run_once():
     mt5c = MT5Client()
-    
-    if settings.ATTACH_MODE:
-        # ATTACH → Connect to the running terminal without credentials
-        info = mt5c.connect(path=None, attach_mode=True)
-    else:
-        # HEADLESS login → Provide all parameters for login
-        info = mt5c.connect(
-            path=settings.MT5_TERMINAL_PATH,
-            login=settings.MT5_LOGIN,
-            password=settings.MT5_PASSWORD,
-            server=settings.MT5_SERVER,
-            attach_mode=False,
-        )
-
-    if not info:
+    if not mt5c.connect(
+        login=settings.MT5_LOGIN or 0,
+        password=settings.MT5_PASSWORD or "",
+        server=settings.MT5_SERVER or "",
+        path=settings.MT5_TERMINAL_PATH,
+        attach_mode=bool(not settings.MT5_LOGIN),
+    ):
         logger.error("MT5 холбогдож чадсангүй. Terminal нээж login хийсэн эсэхийг шалгана уу.")
         return False
         
@@ -132,31 +112,17 @@ def run_once():
     base_msg = f"[{settings.SYMBOL}] close={last_close:.2f} | atr={a:.5f} | signal={sig['signal']} | {sig['reason']}"
     logger.info(base_msg)
 
-    raw_signal = sig["signal"]
-    account_equity = float(snap.get("equity", account_balance))
-    positions = mt5c.get_positions(settings.SYMBOL)
-    open_pos = len(positions) if positions is not None else 0
-    
-    # CLI --force имхийг эхэлж шалгах
-    if args.force:
-        logger.warning(f"--force active: overriding decision -> {args.force}")
-        decision = Decision(
-            action=args.force, reason="CLI_FORCE",
-            lot=0.10, sl_points=a*guard.sl_mult, tp_points=a*guard.tp_mult
-        )
-    # Дараа нь .env force-ийг шалгах
-    else:
-        force = os.getenv("TEST_FORCE_SIDE", "").upper()
-        if force in ("BUY", "SELL"):
-            logger.warning(f"TEST_FORCE_SIDE active: overriding decision -> {force}")
-            decision = Decision(
-                action=force, reason="TEST_FORCE",
-                lot=0.10, sl_points=a*guard.sl_mult, tp_points=a*guard.tp_mult
-            )
-        else:
-            decision = guard.filter_decision(raw_signal, last_close, ma20, ma50, rsi14, a, account_balance,
-                                             now_utc=datetime.now(timezone.utc),
-                                             open_positions=open_pos, equity_usd=account_equity)
+    # Get trading decision through safety gate
+    decision = guard.filter_decision(
+        raw_signal=sig["signal"],
+        close=last_close,
+        ma_fast=ma20,
+        ma_slow=ma50,
+        rsi=rsi14,
+        atr=a,
+        balance_usd=account_balance,
+        now_utc=datetime.now(timezone.utc),
+    )
 
     logger.info(
         f"[{settings.SYMBOL}] decision={decision.action} | lot={decision.lot} | "
@@ -164,40 +130,18 @@ def run_once():
     )
 
     if decision.action in ("BUY", "SELL"):
-        # Convert stop points to prices
-        entry = last_close  # Using last close as entry price hint
-        sl_pts = float(decision.sl_points)
-        tp_pts = float(decision.tp_points)
-        sl_price, tp_price = compute_stops(settings.SYMBOL, decision.action, entry, sl_pts, tp_pts)
-        
-        # Execute with absolute SL/TP prices
+        # Place order using mt5_exec wrapper
         res = place_market(
             symbol=settings.SYMBOL,
             side=decision.action,
             lot=decision.lot,
-            sl=sl_price,
-            tp=tp_price
+            sl=decision.sl_points,
+            tp=decision.tp_points
         )
         
         if res["ok"]:
             guard.mark_trade(decision.action)
-            # Өдрийн лимитийн тоолуурыг нэмэгдүүлнэ
-            guard.limits.mark_trade(settings.SYMBOL, datetime.now(timezone.utc))
             logger.info("Trade placed and cooldown marked by safety gate.")
-
-            # Аудит CSV
-            if settings.TRADE_LOG_ENABLED:
-                append_trade_row(
-                    symbol=settings.SYMBOL,
-                    side=decision.action,
-                    lot=res.get("lot"),
-                    entry=last_close,
-                    sl=res.get("sl") if res.get("sl") is not None else (last_close - decision.sl_points if decision.action=="BUY" else last_close + decision.sl_points),
-                    tp=res.get("tp") if res.get("tp") is not None else (last_close + decision.tp_points if decision.action=="BUY" else last_close - decision.tp_points),
-                    reason=decision.reason,
-                    ticket=res.get("ticket"),
-                    dry_run=res.get("dry"),
-                )
             
             if tg:
                 t = "DRY" if settings.DRY_RUN else f"TICKET {res['ticket']}"
@@ -231,22 +175,7 @@ def run_once():
     return True
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--diag", action="store_true", help="Run diagnostics and exit.")
-    parser.add_argument("--teletest", action="store_true", help="Send a Telegram ping and latest chart, then exit.")
-    parser.add_argument("--force", choices=["BUY","SELL"], help="Force one-off decision (DRY_RUN recommended)")
-    args = parser.parse_args()
-
-    if args.diag:
+    if len(sys.argv) > 1 and sys.argv[1] == "--diag":
         sys.exit(0 if run_once() else 1)
-    elif args.teletest:
-        from services.telegram_notify import send_text, send_photo
-        send_text("✅ Telegram PING: bot is connected.")
-        p = latest_chart_path_for(settings.SYMBOL)
-        if p:
-            send_photo(p, caption="Latest chart")
-        else:
-            send_text("ℹ️ No chart file found to attach.")
-        sys.exit(0)
     else:
         run_once()

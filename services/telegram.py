@@ -3,13 +3,14 @@ from __future__ import annotations
 import os
 import requests
 from core.logger import get_logger
+from settings import settings
 
 logger = get_logger("telegram")
 
 class TelegramClient:
     def __init__(self, token: str | None = None, chat_id: str | None = None, timeout: int = 10):
-        self.token = token or os.getenv("TELEGRAM_BOT_TOKEN")
-        self.chat_id = chat_id or os.getenv("TELEGRAM_CHAT_ID")
+        self.token = token or settings.TELEGRAM_BOT_TOKEN
+        self.chat_id = chat_id or settings.TELEGRAM_CHAT_ID
         self.timeout = timeout
         if not self.token or not self.chat_id:
             logger.info("TelegramClient: no token/chat_id — sending disabled.")
