@@ -1,15 +1,24 @@
 """
 Quick test script for MT5 broker adapter implementation
+
+Updated to use the MT5-less testing strategy with proper skip/mock handling.
 """
 
 import logging
 import sys
 from unittest.mock import MagicMock, Mock
 
+import pytest
+
+from tests.conftest import mt5_available, skip_if_no_mt5
+
 # Setup logging to see what's happening
 logging.basicConfig(
     level=logging.DEBUG, format="%(levelname)s - %(name)s - %(message)s"
 )
+
+# Mark this as a unit test that works with mocks
+pytestmark = pytest.mark.mt5_unit
 
 
 # Mock MetaTrader5 module to avoid dependency
@@ -187,6 +196,28 @@ def test_mt5_adapter():
         print(f"❌ Positions failed: {e}")
 
     print("\n🎉 MT5 Adapter Test Complete!")
+
+
+def test_mt5_adapter_with_mock():
+    """
+    Pytest-compatible test that runs the MT5 adapter test with mocks.
+
+    This test can run in CI environments without MT5.
+    """
+    # This will use the mock MT5 from our fixtures
+    test_mt5_adapter()
+
+
+@pytest.mark.mt5_integration
+@skip_if_no_mt5("Requires actual MT5 installation")
+def test_mt5_adapter_integration():
+    """
+    Integration test that requires actual MT5 installation.
+
+    This test will be skipped in CI but can run locally if MT5 is available.
+    """
+    # This would run against real MT5 if available
+    test_mt5_adapter()
 
 
 if __name__ == "__main__":

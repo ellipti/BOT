@@ -35,28 +35,28 @@
 
 ## Upgrade Checklist (01–20) – Status Table
 
-| #   | Upgrade                    | Status | Evidence                               | Acceptance Result                     | Notes                                    |
-| --- | -------------------------- | ------ | -------------------------------------- | ------------------------------------- | ---------------------------------------- |
+| #   | Upgrade                    | Status | Evidence                                | Acceptance Result                     | Notes                                    |
+| --- | -------------------------- | ------ | --------------------------------------- | ------------------------------------- | ---------------------------------------- |
 | 01  | Runtime std (Py 3.12.x)    | ✅     | `.python-version`, `pyproject.toml#L14` | Python 3.12+ enforced in CI matrix    | CI validates 3.11/3.12 cross-platform    |
-| 02  | Reproducible builds        | ✅     | `requirements*.txt`, `fe60929`         | pip-tools generates locked deps       | Deterministic builds via pip-compile     |
-| 03  | PTB v20+ (Application API) | ✅     | `services/telegram_v2.py#L9`           | Async Application API integrated      | Breaking change from v13→v20 completed   |
-| 04  | Pydantic Settings          | ✅     | `config/settings.py#L12`               | BaseSettings v2+ with validation      | Environment-based config with keyring    |
-| 05  | JSON+Rotating Logs         | ✅     | `logging_setup.py#L295`                | Advanced logger with rotation         | Structured JSON, 21 redaction patterns   |
-| 06  | Atomic State I/O           | ✅     | `utils/atomic_io.py#L38`               | FileLocker with atomic writes         | SQLite WAL, file-level locking           |
-| 07  | Risk Governance V1         | ✅     | `risk/governor.py#L92`                 | Daily/weekly limits, circuit breaker  | Legacy risk system (V2 available)        |
-| 08  | Calendar Guard (TE)        | ✅     | `integrations/trading_economics.py`    | News blackout system                  | Trading Economics API integration        |
-| 09  | Backtest + YAML params     | ✅     | `backtest/engine.py`, `configs/*.yaml` | Strategy parameterization             | YAML-driven backtesting framework        |
-| 10  | CI/CD Pipeline             | ✅     | `.github/workflows/ci.yml#L1`          | Matrix CI with quality gates          | Windows+Ubuntu, Python 3.11/3.12         |
-| 11  | Pre-commit Gate            | ✅     | `.pre-commit-config.yaml`, `4d620cd`   | Black, isort, ruff hooks              | Auto-formatting on commit                |
-| 12  | Docs/Runbook               | ✅     | `README.md`, `RUNBOOK.md`, `06bc4d5`   | Comprehensive documentation           | Ops playbooks, troubleshooting guides    |
-| 13  | Observability              | ✅     | `observability/metrics.py#L15`         | /metrics, /healthz, /status endpoints | Prometheus-compatible metrics            |
-| 14  | Risk Governance V2         | ✅     | `risk/governor_v2.py#L230`             | Loss-streak, dynamic blackout         | Advanced risk state management           |
-| 15  | Strategy Profiles & Flags  | ✅     | `strategies/baseline.py`, `configs/`   | Multi-strategy configuration          | YAML profile system                      |
-| 16  | Feed Abstraction           | ✅     | `feeds/live.py`, `feeds/backtest.py`   | Live/Backtest feed interface          | Slippage/spread/fee models               |
-| 17  | Order Lifecycle V2         | ✅     | `core/executor/order_book.py#L15`      | OrderBook, partial fills, reconcile   | SQLite state, threading support          |
-| 18  | Performance (Worker Queue) | ✅     | `infra/workqueue.py`                   | Async task isolation                  | Chart/report workload separation         |
-| 19  | Security & Secrets         | ✅     | `infra/secrets.py#L1`                  | Keyring, scan, log redaction          | Windows Credential Manager               |
-| 20  | Release Eng                | ✅     | `mypy.ini`, `.bandit`, `bd62928`       | mypy/Bandit/Matrix/Drafter            | Strict quality gates, automated releases |
+| 02  | Reproducible builds        | ✅     | `requirements*.txt`, `fe60929`          | pip-tools generates locked deps       | Deterministic builds via pip-compile     |
+| 03  | PTB v20+ (Application API) | ✅     | `services/telegram_v2.py#L9`            | Async Application API integrated      | Breaking change from v13→v20 completed   |
+| 04  | Pydantic Settings          | ✅     | `config/settings.py#L12`                | BaseSettings v2+ with validation      | Environment-based config with keyring    |
+| 05  | JSON+Rotating Logs         | ✅     | `logging_setup.py#L295`                 | Advanced logger with rotation         | Structured JSON, 21 redaction patterns   |
+| 06  | Atomic State I/O           | ✅     | `utils/atomic_io.py#L38`                | FileLocker with atomic writes         | SQLite WAL, file-level locking           |
+| 07  | Risk Governance V1         | ✅     | `risk/governor.py#L92`                  | Daily/weekly limits, circuit breaker  | Legacy risk system (V2 available)        |
+| 08  | Calendar Guard (TE)        | ✅     | `integrations/trading_economics.py`     | News blackout system                  | Trading Economics API integration        |
+| 09  | Backtest + YAML params     | ✅     | `backtest/engine.py`, `configs/*.yaml`  | Strategy parameterization             | YAML-driven backtesting framework        |
+| 10  | CI/CD Pipeline             | ✅     | `.github/workflows/ci.yml#L1`           | Matrix CI with quality gates          | Windows+Ubuntu, Python 3.11/3.12         |
+| 11  | Pre-commit Gate            | ✅     | `.pre-commit-config.yaml`, `4d620cd`    | Black, isort, ruff hooks              | Auto-formatting on commit                |
+| 12  | Docs/Runbook               | ✅     | `README.md`, `RUNBOOK.md`, `06bc4d5`    | Comprehensive documentation           | Ops playbooks, troubleshooting guides    |
+| 13  | Observability              | ✅     | `observability/metrics.py#L15`          | /metrics, /healthz, /status endpoints | Prometheus-compatible metrics            |
+| 14  | Risk Governance V2         | ✅     | `risk/governor_v2.py#L230`              | Loss-streak, dynamic blackout         | Advanced risk state management           |
+| 15  | Strategy Profiles & Flags  | ✅     | `strategies/baseline.py`, `configs/`    | Multi-strategy configuration          | YAML profile system                      |
+| 16  | Feed Abstraction           | ✅     | `feeds/live.py`, `feeds/backtest.py`    | Live/Backtest feed interface          | Slippage/spread/fee models               |
+| 17  | Order Lifecycle V2         | ✅     | `core/executor/order_book.py#L15`       | OrderBook, partial fills, reconcile   | SQLite state, threading support          |
+| 18  | Performance (Worker Queue) | ✅     | `infra/workqueue.py`                    | Async task isolation                  | Chart/report workload separation         |
+| 19  | Security & Secrets         | ✅     | `infra/secrets.py#L1`                   | Keyring, scan, log redaction          | Windows Credential Manager               |
+| 20  | Release Eng                | ✅     | `mypy.ini`, `.bandit`, `bd62928`        | mypy/Bandit/Matrix/Drafter            | Strict quality gates, automated releases |
 
 ---
 

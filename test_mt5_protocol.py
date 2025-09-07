@@ -1,10 +1,19 @@
 """
 Simple compatibility test for MT5 broker adapter
+
+Updated to use the MT5-less testing strategy with proper skip/mock handling.
 """
 
 import logging
 import sys
 from unittest.mock import Mock
+
+import pytest
+
+from tests.conftest import mt5_available, skip_if_no_mt5
+
+# Mark this as a unit test that works with mocks
+pytestmark = pytest.mark.mt5_unit
 
 
 # Mock MT5 module

@@ -172,19 +172,36 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=html:htmlcov",
     "--cov-report=xml",
+    "--cov-fail-under=75",
 ]
 testpaths = [
+    "tests",
     ".",
 ]
 filterwarnings = [
     "ignore::UserWarning",
     "ignore::DeprecationWarning",
+    "ignore:.*MetaTrader5.*:ImportWarning",
 ]
 markers = [
+    # MT5-less testing strategy markers
+    "mt5_integration: Tests requiring actual MT5 connection (skipped in CI)",
+    "mt5_unit: Unit tests for MT5-related code using mocks (runs in CI)",
+    "broker_integration: Tests requiring broker connectivity",
+
+    # Existing markers
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "backtest: marks tests as backtest-related",
+
+    # Additional component markers
+    "event_bus: Event system tests",
+    "order_book: Order book functionality tests",
+    "risk: Risk management tests",
+    "feed: Data feed tests",
+    "reconciler: Trade reconciliation tests",
+    "security: Security-related tests",
 ]
 
 [tool.coverage.run]

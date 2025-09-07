@@ -108,11 +108,18 @@ jobs:
 
       - name: "🧪 Run Tests"
         run: |
-          pytest -q --tb=short --maxfail=3
+          # Run tests with MT5-less strategy:
+          # - Unit tests (including MT5 mocks): Always run
+          # - Integration tests requiring MT5: Skip in CI
+          pytest -q --tb=short --maxfail=3 \
+            -m "not mt5_integration" \
+            --cov=core --cov=adapters --cov=tests \
+            --cov-report=xml --cov-report=term-missing
         env:
           # Ensure consistent test environment
           PYTHONPATH: ${{ github.workspace }}
           DRY_RUN: "true"
+          # Note: MT5 integration tests run in separate workflow (ci-mt5.yml)
 
       - name: "📈 Upload Test Results"
         if: always()

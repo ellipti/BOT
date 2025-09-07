@@ -187,6 +187,7 @@ python app.py
 ```
 
 Schedule in Task Scheduler:
+
 1. Open Task Scheduler → Create Basic Task
 2. Set trigger: Daily, repeat every 1 minute
 3. Action: Start program → `D:\BOT\BOT\run_bot.bat`
@@ -334,12 +335,14 @@ pip-sync requirements-dev.txt
 ## 🔐 Security Considerations
 
 ### Environment Security
+
 - ✅ Never commit `.env` files to version control
 - ✅ Use strong, unique passwords for MT5 accounts
 - ✅ Regularly rotate Telegram bot tokens
 - ✅ Monitor logs for suspicious activity
 
 ### Trading Security
+
 - ✅ Always start with `DRY_RUN=true`
 - ✅ Test extensively before live trading
 - ✅ Start with small position sizes
@@ -347,6 +350,7 @@ pip-sync requirements-dev.txt
 - ✅ Monitor performance daily
 
 ### Production Security
+
 - ✅ Run with minimal system privileges
 - ✅ Use dedicated MT5 demo accounts for testing
 - ✅ Implement proper backup procedures
@@ -355,12 +359,14 @@ pip-sync requirements-dev.txt
 ## 📈 Performance Optimization
 
 ### System Requirements
+
 - **CPU**: Multi-core processor (chart generation is CPU-intensive)
 - **RAM**: 4GB+ (8GB recommended for backtesting)
 - **Storage**: SSD recommended for faster I/O operations
 - **Network**: Stable internet connection for MT5 and APIs
 
 ### Optimization Tips
+
 - Use 30-minute or higher timeframes for reduced CPU usage
 - Disable chart generation (`GENERATE_CHARTS=false`) for better performance
 - Implement proper log rotation to prevent disk space issues
@@ -371,6 +377,7 @@ pip-sync requirements-dev.txt
 ### Common Issues
 
 **MT5 Connection Failed**
+
 ```bash
 # Check MT5 terminal is running (attach mode)
 # Verify credentials (login mode)
@@ -378,6 +385,7 @@ python app.py --diag
 ```
 
 **Telegram Notifications Not Working**
+
 ```bash
 # Test Telegram configuration
 python app.py --teletest
@@ -386,6 +394,7 @@ python app.py --teletest
 ```
 
 **Trading Not Executing**
+
 ```bash
 # Verify DRY_RUN setting
 # Check daily limits not exceeded
@@ -394,6 +403,7 @@ python app.py --teletest
 ```
 
 **Performance Issues**
+
 ```bash
 # Disable chart generation temporarily
 # Check available disk space
@@ -436,14 +446,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Status Dashboard
 
-| Component | Status | Version | Coverage |
-|-----------|--------|---------|----------|
-| Core Engine | ✅ Stable | 1.2.0 | 85% |
-| MT5 Integration | ✅ Stable | 1.2.0 | 90% |
-| Risk Management | ✅ Stable | 1.2.0 | 95% |
-| Telegram Alerts | ✅ Stable | 1.2.0 | 80% |
-| Backtesting | ✅ Stable | 1.2.0 | 85% |
-| Chart Generation | ✅ Stable | 1.2.0 | 75% |
+| Component        | Status    | Version | Coverage |
+| ---------------- | --------- | ------- | -------- |
+| Core Engine      | ✅ Stable | 1.2.0   | 85%      |
+| MT5 Integration  | ✅ Stable | 1.2.0   | 90%      |
+| Risk Management  | ✅ Stable | 1.2.0   | 95%      |
+| Telegram Alerts  | ✅ Stable | 1.2.0   | 80%      |
+| Backtesting      | ✅ Stable | 1.2.0   | 85%      |
+| Chart Generation | ✅ Stable | 1.2.0   | 75%      |
 
 **Last Updated**: September 7, 2025
 **Next Release**: v1.3.0 (Enhanced AI integration)
