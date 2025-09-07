@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Complete documentation and release preparation
 - Comprehensive README with quickstart guide
 - Detailed .env.example with full configuration explanations
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2025-09-07
 
 ### Added
+
 - Pre-commit quality gates with automated code formatting
 - Black code formatter integration (v25.1.0)
 - isort import organizer (v6.0.1)
@@ -26,18 +28,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Git pre-commit automation
 
 ### Changed
+
 - Updated Ruff configuration to new lint section format
 - Enhanced pyproject.toml with quality tool configurations
 - Improved development workflow with automated formatting
 
 ### Fixed
+
 - Core configuration import structure in core/config.py
-- MyPy module detection with utils/__init__.py creation
+- MyPy module detection with utils/**init**.py creation
 - Pre-commit hook compatibility on Windows
 
 ## [1.1.0] - 2025-09-07
 
 ### Added
+
 - GitHub Actions CI/CD pipeline
 - Automated testing on multiple Python versions (3.11, 3.12, 3.13)
 - Multi-platform testing (Ubuntu, Windows, macOS)
@@ -47,17 +52,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code coverage reporting
 
 ### Changed
+
 - Enhanced project structure for CI/CD compatibility
 - Improved error handling in test suites
 - Updated development dependencies for better CI integration
 
 ### Security
+
 - Added automated security scanning to CI pipeline
 - Implemented dependency vulnerability checks
 
 ## [1.0.0] - 2025-09-01
 
 ### Added
+
 - Complete trading bot implementation with MT5 integration
 - Advanced risk management and safety gates
 - Multi-recipient Telegram notifications with charts
@@ -69,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Production-ready logging and audit trails
 
 ### Features
+
 - **MT5 Integration**: Both attach and login modes supported
 - **Safety Systems**: Daily limits, position limits, loss protection
 - **Chart Analysis**: Technical indicators with visual overlays
@@ -79,12 +88,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Audit Trail**: Complete trade logging with CSV export
 
 ### Security
+
 - Environment-based configuration management
 - Secure credential handling
 - Production safety checks
 - Dry-run mode for testing
 
 ### Performance
+
 - Optimized chart rendering with matplotlib
 - Efficient data processing with pandas
 - Atomic operations for state management
@@ -93,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.0] - 2025-08-25
 
 ### Added
+
 - Initial project structure and core components
 - Basic MT5 connectivity and trading functions
 - Fundamental risk management features
@@ -100,12 +112,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Development environment setup
 
 ### Changed
+
 - Project reorganization for better maintainability
 - Improved error handling and logging
 
 ## [0.1.0] - 2025-08-15
 
 ### Added
+
 - Initial repository setup
 - Basic trading bot framework
 - Core dependencies and project structure
@@ -116,16 +130,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Version Guidelines
 
 ### Major Version (X.0.0)
+
 - Breaking changes to API or configuration
 - Major feature additions or architectural changes
 - Database schema changes requiring migration
 
 ### Minor Version (0.X.0)
+
 - New features and enhancements
 - New integrations or strategies
 - Non-breaking API additions
 
 ### Patch Version (0.0.X)
+
 - Bug fixes and small improvements
 - Security patches
 - Documentation updates
@@ -145,6 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Breaking Changes
 
 When introducing breaking changes, we:
+
 - Provide migration guides in release notes
 - Offer backward compatibility when possible
 - Give advance notice in previous releases

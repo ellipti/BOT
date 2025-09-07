@@ -53,6 +53,7 @@ notepad .env
 ```
 
 Essential production settings:
+
 ```bash
 # Production Configuration
 DRY_RUN=false
@@ -71,6 +72,7 @@ TELEGRAM_SEND_CHARTS=true
 #### 3. Create Startup Script
 
 Create `C:\TradingBot\run_bot.bat`:
+
 ```batch
 @echo off
 REM Trading Bot Startup Script
@@ -245,7 +247,7 @@ CMD ["python", "app.py"]
 #### 2. Docker Compose Configuration
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   trading-bot:
@@ -318,12 +320,14 @@ C:\TradingBot\logs\service_stderr.log
 #### 2. Key Metrics to Monitor
 
 - **Trading Performance**:
+
   - Daily P&L
   - Win rate
   - Number of trades executed
   - Risk metrics (drawdown, exposure)
 
 - **System Health**:
+
   - CPU usage
   - Memory consumption
   - Disk space
@@ -338,6 +342,7 @@ C:\TradingBot\logs\service_stderr.log
 #### 3. Automated Monitoring Script
 
 Create `C:\TradingBot\monitor.ps1`:
+
 ```powershell
 # Trading Bot Monitoring Script
 param(
@@ -403,6 +408,7 @@ Schedule this script to run every 15 minutes using Task Scheduler.
 #### 2. Daily Report Template
 
 Create automated daily reports:
+
 ```
 📈 Trading Bot Daily Report - September 7, 2025
 
@@ -455,12 +461,14 @@ taskkill /f /im python.exe
 #### 2. Market Emergency Response
 
 1. **High Volatility Event**:
+
    - Monitor positions closely
    - Consider reducing position sizes
    - Increase stop-loss levels temporarily
    - Halt new position openings
 
 2. **News Event Impact**:
+
    - Pause trading until volatility subsides
    - Review open positions
    - Adjust risk parameters if necessary
@@ -486,6 +494,7 @@ IT Support: +1-555-0125
 #### 1. Backup Procedures
 
 **Daily Automated Backup**:
+
 ```batch
 @echo off
 REM Daily backup script
@@ -504,6 +513,7 @@ echo Backup completed: %BACKUP_DIR%
 ```
 
 **Cloud Backup** (PowerShell):
+
 ```powershell
 # Upload to cloud storage (Azure/AWS/GCloud)
 # Example for Azure Blob Storage
@@ -521,6 +531,7 @@ Compress-Archive -Path "C:\TradingBot\state\*" -DestinationPath "C:\temp\$backup
 #### 2. Recovery Procedures
 
 **Full System Recovery**:
+
 1. Install Python and dependencies on new system
 2. Restore application files from Git repository
 3. Restore configuration files from backup
@@ -530,6 +541,7 @@ Compress-Archive -Path "C:\TradingBot\state\*" -DestinationPath "C:\temp\$backup
 7. Monitor closely for 24 hours after recovery
 
 **State Recovery Only**:
+
 1. Stop trading bot service
 2. Backup current state (if corrupted)
 3. Restore state files from backup
@@ -541,6 +553,7 @@ Compress-Archive -Path "C:\TradingBot\state\*" -DestinationPath "C:\temp\$backup
 ### Regular Maintenance Tasks
 
 #### Daily (Automated)
+
 - [ ] Health check monitoring
 - [ ] Log file rotation
 - [ ] Performance metrics collection
@@ -548,6 +561,7 @@ Compress-Archive -Path "C:\TradingBot\state\*" -DestinationPath "C:\temp\$backup
 - [ ] Check system resources
 
 #### Weekly (Manual)
+
 - [ ] Review trading performance
 - [ ] Analyze log files for warnings
 - [ ] Update risk parameters if needed
@@ -555,6 +569,7 @@ Compress-Archive -Path "C:\TradingBot\state\*" -DestinationPath "C:\temp\$backup
 - [ ] Verify backup integrity
 
 #### Monthly (Manual)
+
 - [ ] Full system backup
 - [ ] Security audit (credentials, access)
 - [ ] Performance optimization review
@@ -727,6 +742,7 @@ PRAGMA temp_store=memory;
 **Symptoms**: NSSM service fails to start, Task Scheduler task fails
 
 **Diagnosis**:
+
 ```batch
 # Check service status
 nssm status TradingBot
@@ -743,6 +759,7 @@ python app.py --diag
 ```
 
 **Solutions**:
+
 - Verify Python installation and virtual environment
 - Check file permissions (service account access)
 - Validate .env configuration
@@ -754,6 +771,7 @@ python app.py --diag
 **Symptoms**: "MT5 connection failed", "Terminal not available"
 
 **Diagnosis**:
+
 ```batch
 # Check MT5 process
 tasklist | findstr terminal64.exe
@@ -763,6 +781,7 @@ python -c "import MetaTrader5 as mt5; print(mt5.initialize())"
 ```
 
 **Solutions**:
+
 - Restart MT5 terminal
 - Verify login credentials
 - Check broker server status
@@ -774,6 +793,7 @@ python -c "import MetaTrader5 as mt5; print(mt5.initialize())"
 **Symptoms**: No Telegram messages received
 
 **Diagnosis**:
+
 ```batch
 # Test Telegram configuration
 python app.py --teletest
@@ -783,6 +803,7 @@ ping api.telegram.org
 ```
 
 **Solutions**:
+
 - Verify bot token and chat ID
 - Check bot permissions in chat
 - Test with @userinfobot to confirm chat ID
@@ -794,6 +815,7 @@ ping api.telegram.org
 **Symptoms**: System becomes slow, memory usage increases over time
 
 **Diagnosis**:
+
 ```python
 # Memory profiling
 pip install memory-profiler
@@ -801,6 +823,7 @@ python -m memory_profiler app.py
 ```
 
 **Solutions**:
+
 - Restart service daily (scheduled task)
 - Implement memory monitoring
 - Optimize chart generation settings
@@ -823,6 +846,7 @@ CHART_DEBUG=true
 ```
 
 Debug log analysis:
+
 ```python
 # log_analyzer.py
 import re
@@ -860,6 +884,7 @@ analyze_logs('C:\\TradingBot\\logs\\trading_bot.log')
 Before going live with real money:
 
 ### Pre-Production Testing
+
 - [ ] All features tested in demo environment
 - [ ] Backtesting completed with satisfactory results
 - [ ] Risk management parameters validated
@@ -868,6 +893,7 @@ Before going live with real money:
 - [ ] Backup and recovery procedures verified
 
 ### Configuration Review
+
 - [ ] `DRY_RUN=false` set only after thorough testing
 - [ ] Conservative risk settings applied
 - [ ] Production credentials configured
@@ -875,6 +901,7 @@ Before going live with real money:
 - [ ] Log levels appropriate for production
 
 ### Infrastructure Setup
+
 - [ ] Service deployment method chosen and tested
 - [ ] Monitoring scripts deployed
 - [ ] Backup procedures automated
@@ -882,6 +909,7 @@ Before going live with real money:
 - [ ] Documentation current and accessible
 
 ### Go-Live Process
+
 - [ ] Deploy during low-volatility period
 - [ ] Monitor closely for first 24 hours
 - [ ] Verify first trades execute correctly
