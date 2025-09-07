@@ -123,9 +123,7 @@ class IdempotentOrderExecutor:
             # Fail safe: assume not sent to avoid blocking new orders
             return False
 
-    def record(
-        self, client_order_id: str, broker_order_id: str | None = None
-    ) -> None:
+    def record(self, client_order_id: str, broker_order_id: str | None = None) -> None:
         """
         Record that order was sent to broker.
 

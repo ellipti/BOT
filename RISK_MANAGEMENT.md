@@ -9,6 +9,7 @@ The bot now includes a comprehensive quantitative risk management system with AT
 ### 1. Position Sizing (`core/sizing/sizing.py`)
 
 #### `calc_lot_by_risk(symbol_info, entry, sl, equity, risk_pct)`
+
 Calculates position size in lots based on risk management principles:
 
 ```
@@ -16,6 +17,7 @@ Formula: lots = (equity × risk_pct) / (ticks_to_sl × tick_value_per_tick)
 ```
 
 **Parameters:**
+
 - `symbol_info`: MT5 symbol info with trading constraints
 - `entry`: Entry price
 - `sl`: Stop loss price
@@ -27,15 +29,18 @@ Formula: lots = (equity × risk_pct) / (ticks_to_sl × tick_value_per_tick)
 ### 2. ATR-Based SL/TP Calculation
 
 #### `calc_sl_tp_by_atr(side, entry, atr, sl_mult, tp_mult)`
+
 Calculates stop loss and take profit levels based on ATR:
 
 **Logic:**
+
 - BUY: SL = entry - (atr × sl_mult), TP = entry + (atr × tp_mult)
 - SELL: SL = entry + (atr × sl_mult), TP = entry - (atr × tp_mult)
 
 ### 3. ATR Fetching
 
 #### `fetch_atr(symbol, timeframe, period=14)`
+
 Fetches Average True Range from MT5 historical data using pandas:
 
 1. Downloads recent price bars
@@ -46,9 +51,11 @@ Fetches Average True Range from MT5 historical data using pandas:
 ### 4. Utility Functions
 
 #### `round_to_step(value, step, min_v, max_v)`
+
 Rounds values to valid trading increments within symbol constraints.
 
 #### `get_account_equity()`
+
 Retrieves current account equity from MT5.
 
 ## Configuration
@@ -68,6 +75,7 @@ class TradingSettings:
 ```
 
 ### Environment Variables
+
 - `TRADING_RISK_PERCENTAGE` or `TRADING_RISK_PCT`: Risk per trade (default: 0.01)
 - `TRADING_ATR_PERIOD`: ATR calculation period (default: 14)
 - `TRADING_SL_MULT`: Stop loss ATR multiplier (default: 1.5)
@@ -84,11 +92,13 @@ The trading pipeline (`app/pipeline.py`) now includes:
 4. **Order Execution**: Executes orders with calculated lots, SL, and TP
 
 ### Event Flow
+
 ```
 SignalDetected → Validated → RiskApproved → OrderPlaced → Execution
 ```
 
 Each stage now includes:
+
 - ATR fetching and validation
 - Position size calculation based on equity and risk percentage
 - Dynamic SL/TP levels based on market volatility (ATR)
@@ -97,6 +107,7 @@ Each stage now includes:
 ## Example Usage
 
 ### Manual Position Sizing
+
 ```python
 from core.sizing.sizing import calc_lot_by_risk, calc_sl_tp_by_atr, fetch_atr
 
@@ -117,6 +128,7 @@ print(f"Position Size: {lots:.3f} lots (Risk: ${equity*risk_pct:.2f})")
 ```
 
 ### Pipeline Integration
+
 ```python
 from app.pipeline import get_pipeline
 
@@ -146,6 +158,7 @@ python test_risk_integration.py
 ```
 
 The test validates:
+
 - Position sizing calculations
 - ATR-based SL/TP calculations
 - Settings integration
@@ -161,6 +174,7 @@ The test validates:
 ## Mathematical Foundation
 
 ### Position Sizing Formula
+
 ```
 lots = risk_amount / (stop_distance_ticks × tick_value_per_lot)
 
@@ -171,6 +185,7 @@ Where:
 ```
 
 ### ATR Calculation
+
 ```
 True Range = max(High - Low, |High - Prev_Close|, |Low - Prev_Close|)
 ATR = EMA(True Range, period)
