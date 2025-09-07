@@ -28,7 +28,7 @@ class EventBus:
         bus.publish(SignalDetected(symbol="XAUUSD", side="BUY", strength=0.85))
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize empty event bus"""
         self._handlers: dict[type, list[Callable[[Any], None]]] = defaultdict(list)
         self._stats = {"events_published": 0, "handlers_called": 0, "errors": 0}

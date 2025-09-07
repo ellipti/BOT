@@ -267,7 +267,7 @@ class OrderBook:
             if filled + fill_qty > total + 1e-9:  # Small tolerance
                 raise ValueError(f"Over-fill: {filled + fill_qty} > {total}")
 
-            # Calculate new aggregate values
+                # Calculate new aggregate values
                 new_filled = filled + fill_qty
                 new_avg = ((avg_price * filled) + (price * fill_qty)) / max(
                     new_filled, 1e-9

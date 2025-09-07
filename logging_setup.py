@@ -64,7 +64,7 @@ class RedactionFilter(logging.Filter):
     Protects against accidental logging of secrets, tokens, and passwords
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.redaction_count = 0
 
@@ -103,7 +103,7 @@ class RedactionFilter(logging.Filter):
 
         return True
 
-    def get_redaction_stats(self) -> dict:
+    def get_redaction_stats(self) -> dict[str, int]:
         """Get statistics about redaction activity"""
         return {
             "total_redactions": self.redaction_count,
@@ -195,10 +195,10 @@ class TelegramLogHandler(logging.Handler):
 
     def __init__(self, level: int = logging.ERROR):
         super().__init__(level)
-        self.last_error_time = {}
+        self.last_error_time: dict[str, float] = {}
         self.error_cooldown = 300  # 5 minutes cooldown per error type
 
-    def emit(self, record: logging.LogRecord):
+    def emit(self, record: logging.LogRecord) -> None:
         """Send critical logs to Telegram with rate limiting"""
         try:
             # Rate limiting based on error message hash
@@ -224,7 +224,9 @@ class TelegramLogHandler(logging.Handler):
             alert_text += f"**Time:** {datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')}"
 
             if record.exc_info:
-                alert_text += f"\n**Exception:** `{record.exc_info[0].__name__}`"
+                exc_type = record.exc_info[0]
+                if exc_type is not None:
+                    alert_text += f"\n**Exception:** `{exc_type.__name__}`"
 
             send_error_alert(alert_text)
 
@@ -262,8 +264,10 @@ class DailyRotatingJsonHandler(logging.handlers.TimedRotatingFileHandler):
         )
 
         self.retention_days = retention_days
+        # Set the namer function for custom file naming
+        self.namer = self._custom_namer  # type: ignore[assignment]
 
-    def namer(self, default_name: str) -> str:
+    def _custom_namer(self, default_name: str) -> str:
         """Custom naming for rotated files: app-YYYY-MM-DD.json"""
         base_path = Path(self.baseFilename)
         date_str = datetime.now().strftime("%Y-%m-%d")
