@@ -1,24 +1,34 @@
-import time
-from typing import Optional
-import pandas as pd
-import MetaTrader5 as mt5
 import os
 
+import MetaTrader5 as mt5
+import pandas as pd
+
 from .logger import get_logger
+
 logger = get_logger("mt5")
+
 
 class MT5Client:
     def __init__(self):
         self.initialized = False
 
-    def connect(self, login: int = 0, password: str = "", server: str = "", path: Optional[str] = None, attach_mode: Optional[bool] = None) -> bool:
+    def connect(
+        self,
+        login: int = 0,
+        password: str = "",
+        server: str = "",
+        path: str | None = None,
+        attach_mode: bool | None = None,
+    ) -> bool:
         try:
             # Default: attach mode ON unless explicitly disabled
             if attach_mode is None:
-                attach_mode = self._env_bool("ATTACH_MODE", default=True)
+                attach_mode = self._env_bool("ATTACH_MODE", default="true")
             # Log connection attempt (non-sensitive fields only)
             try:
-                logger.info(f"MT5 connect called | attach_mode={attach_mode} | path={path} | login_provided={bool(login)} | server_provided={bool(server)}")
+                logger.info(
+                    f"MT5 connect called | attach_mode={attach_mode} | path={path} | login_provided={bool(login)} | server_provided={bool(server)}"
+                )
             except Exception:
                 # best-effort logging
                 logger.info("MT5 connect called")
@@ -103,6 +113,7 @@ class MT5Client:
     def _parse_timeframe(self, tf_str: str) -> int:
         """Convert timeframe string to MT5 timeframe constant"""
         import MetaTrader5 as mt5
+
         tf_map = {
             "M1": mt5.TIMEFRAME_M1,
             "M5": mt5.TIMEFRAME_M5,
@@ -142,7 +153,9 @@ class MT5Client:
                 return []
             # Log brief summary
             sample = [repr(p) for p in pos[:3]]
-            logger.info(f"Open positions{f' for {symbol}' if symbol else ''}: count={len(pos)} | sample={sample}")
+            logger.info(
+                f"Open positions{f' for {symbol}' if symbol else ''}: count={len(pos)} | sample={sample}"
+            )
             return pos
         except Exception as e:
             logger.exception(f"Error fetching positions: {e}")
@@ -162,7 +175,7 @@ class MT5Client:
             logger.exception(f"Error fetching orders: {e}")
             return []
 
-    def account_snapshot(self) -> Optional[dict]:
+    def account_snapshot(self) -> dict | None:
         acc = mt5.account_info()
         if acc is None:
             logger.error("Дансны мэдээлэл авч чадсангүй")
@@ -178,15 +191,17 @@ class MT5Client:
             "equity": float(acc.equity),
             "margin_free": float(acc.margin_free),
         }
-        logger.info(f"Дансны мэдээлэл | "
-                   f"ID={snap['login']} | "
-                   f"Нэр={snap['name']} | "
-                   f"Брокер={snap['company']} | "
-                   f"Валют={snap['currency']} | "
-                   f"Хөшүүрэг={snap['leverage']} | "
-                   f"Үлдэгдэл=${snap['balance']:.2f} | "
-                   f"Equity=${snap['equity']:.2f} | "
-                   f"Чөлөөт маржин=${snap['margin_free']:.2f}")
+        logger.info(
+            f"Дансны мэдээлэл | "
+            f"ID={snap['login']} | "
+            f"Нэр={snap['name']} | "
+            f"Брокер={snap['company']} | "
+            f"Валют={snap['currency']} | "
+            f"Хөшүүрэг={snap['leverage']} | "
+            f"Үлдэгдэл=${snap['balance']:.2f} | "
+            f"Equity=${snap['equity']:.2f} | "
+            f"Чөлөөт маржин=${snap['margin_free']:.2f}"
+        )
         return snap
 
     def shutdown(self):
@@ -195,6 +210,6 @@ class MT5Client:
             self.initialized = False
             logger.info("MT5-аас амжилттай салгалаа")
 
-    def _env_bool(self, name: str, default: bool = True) -> bool:
-        v = os.getenv(name, os.getenv(name.lower(), "true" if default else "false"))
+    def _env_bool(self, name: str, default: str = "true") -> bool:
+        v = os.getenv(name, os.getenv(name.lower(), default))
         return str(v).strip().lower() in ("1", "true", "yes", "y")

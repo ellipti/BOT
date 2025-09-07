@@ -1,0 +1,55 @@
+# YAML Lint Configuration for Trading Bot
+extends: default
+
+rules:
+  # Line length
+  line-length:
+    max: 120
+    level: warning
+
+  # Indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+
+  # Comments
+  comments:
+    min-spaces-from-content: 1
+    require-starting-space: true
+
+  # Brackets
+  brackets:
+    max-spaces-inside: 1
+    max-spaces-inside-empty: 0
+
+  # Braces
+  braces:
+    max-spaces-inside: 1
+    max-spaces-inside-empty: 0
+
+  # Document directives
+  document-start: disable
+  document-end: disable
+
+  # Truthy values (allow yes/no, on/off)
+  truthy:
+    allowed-values: ["true", "false", "yes", "no", "on", "off"]
+
+  # Floating point values
+  float-values: disable
+
+  # Quoted strings
+  quoted-strings: disable
+
+  # Empty lines
+  empty-lines:
+    max: 2
+    max-start: 1
+    max-end: 1
+
+# File patterns to ignore
+ignore: |
+  *.yml.template
+  *.yaml.template
+  node_modules/
+  .git/

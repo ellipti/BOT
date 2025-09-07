@@ -1,21 +1,27 @@
-import os, json, time
-from typing import Dict, Any
+"""
+State management with atomic I/O operations
+Updated to use Upgrade #06 atomic file operations
+"""
+
+import os
+import time
+from typing import Any
+
+from utils.atomic_io import atomic_read_json, atomic_update_json, atomic_write_json
 
 STATE_FILE = os.path.join("state", "last_state.json")
 os.makedirs("state", exist_ok=True)
 
-def _read() -> Dict[str, Any]:
-    if not os.path.exists(STATE_FILE):
-        return {}
-    try:
-        with open(STATE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
 
-def _write(data: Dict[str, Any]) -> None:
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+def _read() -> dict[str, Any]:
+    """Read state with atomic operations"""
+    return atomic_read_json(STATE_FILE, default={})
+
+
+def _write(data: dict[str, Any]) -> None:
+    """Write state with atomic operations"""
+    atomic_write_json(STATE_FILE, data)
+
 
 def recently_traded(symbol: str, tf_minutes: int, cooldown_mult: float = 1.5) -> bool:
     """Тухайн timeframe*d* cooldown дотор дахин бүү оролт хий."""
@@ -27,42 +33,51 @@ def recently_traded(symbol: str, tf_minutes: int, cooldown_mult: float = 1.5) ->
     cooldown = tf_minutes * 60 * cooldown_mult
     return elapsed < cooldown
 
+
 def mark_trade(symbol: str, decision: str) -> None:
-    st = _read()
-    st.setdefault(symbol, {})
-    st[symbol]["last_trade_ts"] = time.time()
-    st[symbol]["last_decision"] = decision
-    _write(st)
-import json, os, time
-from typing import Optional
+    """Mark trade with atomic update operation"""
+
+    def update_trade_state(current_state: dict[str, Any]) -> dict[str, Any]:
+        current_state.setdefault(symbol, {})
+        current_state[symbol]["last_trade_ts"] = time.time()
+        current_state[symbol]["last_decision"] = decision
+        return current_state
+
+    atomic_update_json(STATE_FILE, update_trade_state, default={})
+
 
 class StateStore:
+    """Enhanced StateStore with atomic operations"""
+
     def __init__(self, path: str = "last_decision.json"):
         self.path = path
+        # Ensure file exists with atomic operation
         if not os.path.exists(self.path):
-            with open(self.path, "w", encoding="utf-8") as f:
-                json.dump({}, f)
+            atomic_write_json(self.path, {})
 
     def _read(self) -> dict:
-        try:
-            with open(self.path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
+        """Read state with atomic operations"""
+        return atomic_read_json(self.path, default={})
 
     def _write(self, data: dict):
-        with open(self.path, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        """Write state with atomic operations"""
+        atomic_write_json(self.path, data)
 
-    def last_ts(self, symbol: str) -> Optional[float]:
+    def last_ts(self, symbol: str) -> float | None:
+        """Get last timestamp for symbol"""
         return self._read().get(symbol, {}).get("ts")
 
     def set_now(self, symbol: str):
-        data = self._read()
-        data[symbol] = {"ts": time.time()}
-        self._write(data)
+        """Set current timestamp for symbol with atomic update"""
+
+        def update_timestamp(current_data: dict) -> dict:
+            current_data[symbol] = {"ts": time.time()}
+            return current_data
+
+        atomic_update_json(self.path, update_timestamp, default={})
 
     def cooldown_elapsed(self, symbol: str, minutes: int) -> bool:
+        """Check if cooldown period has elapsed"""
         ts = self.last_ts(symbol)
         if ts is None:
             return True

@@ -1,32 +1,35 @@
 from __future__ import annotations
-import os, json, time
+
+import json
+import os
+import time
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Any, Literal
 from zoneinfo import ZoneInfo
-from typing import Literal, Dict, Any, Optional, Tuple
-from settings import settings
+
+from config.settings import get_settings
+from utils.atomic_io import atomic_read_json, atomic_update_json, atomic_write_json
 
 # ---- Тохиргоо (анхдагч) -----------------------------------------------------
 UB_TZ = ZoneInfo("Asia/Ulaanbaatar")
+settings = get_settings()
+
 
 class LimitsManager:
+    """Enhanced LimitsManager with atomic I/O operations"""
+
     def __init__(self, path: str = "state/limits.json"):
         self.path = path
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
     def _load(self) -> dict:
-        if not os.path.exists(self.path): return {}
-        try:
-            with open(self.path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
+        """Load limits data with atomic read"""
+        return atomic_read_json(self.path, default={})
 
     def _save(self, data: dict) -> None:
-        tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, self.path)
+        """Save limits data with atomic write"""
+        atomic_write_json(self.path, data)
 
     def _key(self, date_str: str, symbol: str) -> str:
         return f"{date_str}:{symbol}"
@@ -37,36 +40,74 @@ class LimitsManager:
         return d.get(key, {"trades": 0, "baseline_equity": None, "blocked": False})
 
     def set_state(self, symbol: str, now_utc: datetime, state: dict) -> None:
-        d = self._load()
+        """Set state with atomic update operation"""
         key = self._key(now_utc.strftime("%Y-%m-%d"), symbol)
-        d[key] = state
-        self._save(d)
+
+        def update_limits_state(current_data: dict) -> dict:
+            current_data[key] = state
+            return current_data
+
+        atomic_update_json(self.path, update_limits_state, default={})
 
     def ensure_baseline(self, symbol: str, now_utc: datetime, equity: float) -> None:
-        s = self.get_state(symbol, now_utc)
-        if s.get("baseline_equity") is None and equity and equity > 0:
-            s["baseline_equity"] = float(equity)
-            self.set_state(symbol, now_utc, s)
+        """Ensure baseline equity is set with atomic operation"""
+        key = self._key(now_utc.strftime("%Y-%m-%d"), symbol)
+
+        def set_baseline_if_missing(current_data: dict) -> dict:
+            if key not in current_data:
+                current_data[key] = {
+                    "trades": 0,
+                    "baseline_equity": None,
+                    "blocked": False,
+                }
+            if (
+                current_data[key].get("baseline_equity") is None
+                and equity
+                and equity > 0
+            ):
+                current_data[key]["baseline_equity"] = float(equity)
+            return current_data
+
+        atomic_update_json(self.path, set_baseline_if_missing, default={})
 
     def mark_trade(self, symbol: str, now_utc: datetime) -> None:
-        s = self.get_state(symbol, now_utc)
-        s["trades"] = int(s.get("trades", 0)) + 1
-        self.set_state(symbol, now_utc, s)
+        """Mark trade with atomic increment operation"""
+        key = self._key(now_utc.strftime("%Y-%m-%d"), symbol)
 
-    def check_limits(self, symbol: str, now_utc: datetime, open_positions: int, equity: float) -> Tuple[bool, str]:
-        if not settings.LIMITS_ENABLED:
+        def increment_trade_count(current_data: dict) -> dict:
+            if key not in current_data:
+                current_data[key] = {
+                    "trades": 0,
+                    "baseline_equity": None,
+                    "blocked": False,
+                }
+            current_data[key]["trades"] = int(current_data[key].get("trades", 0)) + 1
+            return current_data
+
+        atomic_update_json(self.path, increment_trade_count, default={})
+
+    def check_limits(
+        self, symbol: str, now_utc: datetime, open_positions: int, equity: float
+    ) -> tuple[bool, str]:
+        if not settings.safety.limits_enabled:
             return True, ""
         s = self.get_state(symbol, now_utc)
         # 1) Хэрэв өмнө нь зогсоосон бол өнөөдөр HOLD
         if s.get("blocked"):
             return False, "Daily limits reached (blocked)"
         # 2) Нээлттэй байрлалын дээд
-        if open_positions >= settings.MAX_OPEN_POSITIONS:
-            return False, f"Max open positions {open_positions}/{settings.MAX_OPEN_POSITIONS}"
+        if open_positions >= settings.safety.max_open_positions:
+            return (
+                False,
+                f"Max open positions {open_positions}/{settings.safety.max_open_positions}",
+            )
         # 3) Өдрийн гүйлгээний дээд
         trades = int(s.get("trades", 0))
-        if trades >= settings.MAX_TRADES_PER_DAY:
-            return False, f"Max trades per day {trades}/{settings.MAX_TRADES_PER_DAY}"
+        if trades >= settings.safety.max_trades_per_day:
+            return (
+                False,
+                f"Max trades per day {trades}/{settings.safety.max_trades_per_day}",
+            )
         # 4) Өдрийн алдагдлын дээд
         base = s.get("baseline_equity")
         if base is None and equity and equity > 0:
@@ -74,14 +115,18 @@ class LimitsManager:
             base = equity
         if base:
             dd = max(0.0, (float(base) - float(equity)) / float(base) * 100.0)
-            if dd >= settings.MAX_DAILY_LOSS_PCT:
+            if dd >= settings.safety.max_daily_loss_percentage:
                 s["blocked"] = True
                 self.set_state(symbol, now_utc, s)
-                return False, f"Daily loss hit: {dd:.2f}% ≥ {settings.MAX_DAILY_LOSS_PCT}%"
+                return (
+                    False,
+                    f"Daily loss hit: {dd:.2f}% ≥ {settings.safety.max_daily_loss_percentage}%",
+                )
         return True, ""
 
+
 # XAUUSD-н түгээмэл гэрээний хэмжээ: 1 lot = 100 oz  →  $1 үнэ = ~$100/lot PnL
-USD_PER_LOT_PER_USD_MOVE = float(os.getenv("USD_PER_LOT_PER_USD_MOVE", 100))
+USD_PER_LOT_PER_USD_MOVE = settings.trading.usd_per_lot_per_usd_move
 
 TE_API_KEY = os.getenv("TE_API_KEY", "")  # Trading Economics (optional)
 try:
@@ -94,17 +139,17 @@ STATE_FILE = os.path.join("state", "last_state.json")
 os.makedirs("state", exist_ok=True)
 
 
-def _read_state() -> Dict[str, Any]:
+def _read_state() -> dict[str, Any]:
     if not os.path.exists(STATE_FILE):
         return {}
     try:
-        with open(STATE_FILE, "r", encoding="utf-8") as f:
+        with open(STATE_FILE, encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return {}
 
 
-def _write_state(d: Dict[str, Any]) -> None:
+def _write_state(d: dict[str, Any]) -> None:
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(d, f, ensure_ascii=False, indent=2)
 
@@ -168,15 +213,17 @@ class Guard:
         rsi: float,
         atr: float,
         balance_usd: float,
-        now_utc: Optional[datetime] = None,
+        now_utc: datetime | None = None,
         open_positions: int = 0,
         equity_usd: float | None = None,
     ) -> Decision:
         """Шийдвэрийг бүх хамгаалалтаар шүүж, лот/SL/TP бэлдэнэ."""
-        now_utc = now_utc or datetime.now(timezone.utc)
-        
+        now_utc = now_utc or datetime.now(UTC)
+
         # --- Check daily limits first ---
-        ok, reason = self.limits.check_limits(self.symbol, now_utc, open_positions, equity_usd or balance_usd)
+        ok, reason = self.limits.check_limits(
+            self.symbol, now_utc, open_positions, equity_usd or balance_usd
+        )
         if not ok:
             return Decision(action="HOLD", reason=f"Limits: {reason}")
 
@@ -241,8 +288,12 @@ class Guard:
             "EURUSD": ["Euro Area", "Germany", "France", "Italy", "Spain"],
             "GBPUSD": ["United Kingdom"],
         }.get(self.symbol, ["United States"])
-        d1 = (now_utc - timedelta(minutes=self.news_window_min)).strftime("%Y-%m-%dT%H:%M")
-        d2 = (now_utc + timedelta(minutes=self.news_window_min)).strftime("%Y-%m-%dT%H:%M")
+        d1 = (now_utc - timedelta(minutes=self.news_window_min)).strftime(
+            "%Y-%m-%dT%H:%M"
+        )
+        d2 = (now_utc + timedelta(minutes=self.news_window_min)).strftime(
+            "%Y-%m-%dT%H:%M"
+        )
         url = (
             "https://api.tradingeconomics.com/calendar?"
             f"importance=3&d1={d1}&d2={d2}&c={','.join(countries)}&format=json"
@@ -257,16 +308,30 @@ class Guard:
             return False
 
     def _validate_signal(
-        self, raw: Signal, close: float, ma_fast: float, ma_slow: float, rsi: float, atr: float
+        self,
+        raw: Signal,
+        close: float,
+        ma_fast: float,
+        ma_slow: float,
+        rsi: float,
+        atr: float,
     ) -> Signal:
         if atr < self.min_atr:
             return "HOLD"
         trend_up = ma_fast > ma_slow
         trend_dn = ma_fast < ma_slow
         if raw == "BUY":
-            return "BUY" if (trend_up and rsi >= 49 and close >= ma_fast - 0.2*atr) else "HOLD"
+            return (
+                "BUY"
+                if (trend_up and rsi >= 49 and close >= ma_fast - 0.2 * atr)
+                else "HOLD"
+            )
         if raw == "SELL":
-            return "SELL" if (trend_dn and rsi <= 51 and close <= ma_fast + 0.2*atr) else "HOLD"
+            return (
+                "SELL"
+                if (trend_dn and rsi <= 51 and close <= ma_fast + 0.2 * atr)
+                else "HOLD"
+            )
         return "HOLD"
 
     def _calc_lot(self, balance_usd: float, atr: float, sl_mult: float) -> float:

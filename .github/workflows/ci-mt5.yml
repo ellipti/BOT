@@ -1,0 +1,278 @@
+name: MT5 Integration Tests
+
+on:
+  # Only run when explicitly triggered (disabled by default)
+  workflow_dispatch:
+    inputs:
+      run_integration:
+        description: "Run MT5 integration tests"
+        required: true
+        default: "false"
+        type: boolean
+
+  # Or when specific files change and MT5 secrets are available
+  push:
+    branches: [main]
+    paths:
+      - "adapters/mt5_broker*.py"
+      - "core/mt5_client.py"
+      - "test_mt5_*.py"
+      - "test_*integration*.py"
+
+  pull_request:
+    branches: [main]
+    paths:
+      - "adapters/mt5_broker*.py"
+      - "core/mt5_client.py"
+      - "test_mt5_*.py"
+      - "test_*integration*.py"
+
+env:
+  PYTHONUNBUFFERED: 1
+  PYTHONPATH: .
+
+jobs:
+  check-mt5-availability:
+    runs-on: ubuntu-latest
+    outputs:
+      has_mt5_secrets: ${{ steps.check.outputs.has_secrets }}
+      should_run: ${{ steps.decide.outputs.should_run }}
+    steps:
+      - name: Check MT5 secrets availability
+        id: check
+        run: |
+          if [[ -n "${{ secrets.MT5_LOGIN }}" && -n "${{ secrets.MT5_PASSWORD }}" && -n "${{ secrets.MT5_SERVER }}" ]]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Decide whether to run
+        id: decide
+        run: |
+          # Run if manually triggered with run_integration=true
+          if [[ "${{ github.event.inputs.run_integration }}" == "true" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "Reason: Manual trigger with run_integration=true"
+            exit 0
+          fi
+
+          # Run if MT5 secrets are available and relevant files changed
+          if [[ "${{ steps.check.outputs.has_secrets }}" == "true" ]]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "Reason: MT5 secrets available"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "Reason: No MT5 secrets available"
+          fi
+
+  mt5-integration-tests:
+    needs: check-mt5-availability
+    if: needs.check-mt5-availability.outputs.should_run == 'true'
+
+    # Use self-hosted runner with MT5 installed, or skip
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [self-hosted] # Requires self-hosted runner with MT5
+        python-version: ["3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -r requirements.txt
+
+      - name: Verify MT5 availability
+        run: |
+          python -c "
+          try:
+              import MetaTrader5 as mt5
+              print(f'MT5 version: {mt5.__version__}')
+              print(f'MT5 terminal info available: {mt5.terminal_info() is not None}')
+          except ImportError as e:
+              print(f'MT5 not available: {e}')
+              exit(1)
+          except Exception as e:
+              print(f'MT5 error: {e}')
+              exit(1)
+          "
+
+      - name: Run MT5 integration tests
+        env:
+          MT5_LOGIN: ${{ secrets.MT5_LOGIN }}
+          MT5_PASSWORD: ${{ secrets.MT5_PASSWORD }}
+          MT5_SERVER: ${{ secrets.MT5_SERVER }}
+          # Optional: path to MT5 terminal
+          MT5_PATH: ${{ secrets.MT5_PATH }}
+        run: |
+          # Run only MT5 integration tests
+          python -m pytest -v -m "mt5_integration" \
+            --tb=short \
+            --durations=10 \
+            --cov=adapters \
+            --cov=core \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            test_mt5_*.py \
+            test_*_integration.py \
+            tests/
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: mt5-integration
+          name: mt5-integration-coverage
+          fail_ci_if_error: false
+
+  mt5-unit-tests:
+    # This job always runs and tests MT5-related code with mocks
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          # Install requirements without MetaTrader5 to test mock behavior
+          pip install $(cat requirements.txt | grep -v "MetaTrader5")
+
+      - name: Verify MT5 is not available (should use mocks)
+        run: |
+          python -c "
+          try:
+              import MetaTrader5
+              print('Warning: MT5 is available, mocks may not be used')
+          except ImportError:
+              print('Good: MT5 not available, will use mocks')
+          "
+
+      - name: Run MT5 unit tests with mocks
+        run: |
+          # Run MT5-related tests that should work with mocks
+          python -m pytest -v -m "mt5_unit or not mt5_integration" \
+            --tb=short \
+            --durations=10 \
+            --cov=adapters \
+            --cov=core \
+            --cov=tests/fixtures \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            test_mt5_*.py \
+            tests/test_*.py
+
+      - name: Test FakeBroker functionality
+        run: |
+          python -c "
+          from tests.fixtures.fake_broker import FakeBrokerAdapter
+          from core.events.bus import EventBus
+
+          # Test fake broker
+          bus = EventBus()
+          broker = FakeBrokerAdapter(event_bus=bus)
+
+          assert broker.connect()
+          print('✓ FakeBroker connects')
+
+          account = broker.get_account_info()
+          assert account['balance'] == 10000.0
+          print('✓ FakeBroker returns account info')
+
+          symbol_info = broker.get_symbol_info('EURUSD')
+          assert symbol_info is not None
+          print('✓ FakeBroker returns symbol info')
+
+          result = broker.submit_market_order('EURUSD', 'buy', 0.1, client_order_id='test_001')
+          assert result['success']
+          print('✓ FakeBroker executes orders')
+
+          positions = broker.get_positions()
+          assert len(positions) == 1
+          print('✓ FakeBroker tracks positions')
+
+          print('All FakeBroker tests passed!')
+          "
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: mt5-unit
+          name: mt5-unit-coverage
+          fail_ci_if_error: false
+
+  mt5-test-summary:
+    needs: [check-mt5-availability, mt5-integration-tests, mt5-unit-tests]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test Summary
+        run: |
+          echo "## MT5 Testing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.check-mt5-availability.outputs.should_run }}" == "true" ]]; then
+            if [[ "${{ needs.mt5-integration-tests.result }}" == "success" ]]; then
+              echo "✅ **MT5 Integration Tests**: PASSED" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **MT5 Integration Tests**: FAILED" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⏭️ **MT5 Integration Tests**: SKIPPED (no secrets or manual trigger)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "${{ needs.mt5-unit-tests.result }}" == "success" ]]; then
+            echo "✅ **MT5 Unit Tests**: PASSED (using mocks)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **MT5 Unit Tests**: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Strategy" >> $GITHUB_STEP_SUMMARY
+          echo "- **Unit Tests**: Always run with MT5 mocks (no dependencies)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Integration Tests**: Only run with MT5 secrets or manual trigger" >> $GITHUB_STEP_SUMMARY
+          echo "- **CI Environment**: Unit tests ensure core functionality works without MT5" >> $GITHUB_STEP_SUMMARY
+          echo "- **Local Development**: Both unit and integration tests can run if MT5 is available" >> $GITHUB_STEP_SUMMARY
