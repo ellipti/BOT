@@ -9,6 +9,7 @@ Successfully implemented comprehensive Feed abstraction system for **backtest-li
 ### 1. Feed Abstraction Layer (`feeds/`)
 
 **Base Protocol & Models:**
+
 ```python
 # feeds/base.py
 class Candle(BaseModel):
@@ -20,6 +21,7 @@ class Feed(Protocol):
 ```
 
 **Implementation Classes:**
+
 - ✅ `LiveMT5Feed`: Real-time MT5 data with timeframe mapping
 - ✅ `BacktestFeed`: CSV data replay with intelligent format detection
 - ✅ `FeedWithSlippage`: Unified wrapper with execution simulation
@@ -27,11 +29,13 @@ class Feed(Protocol):
 ### 2. Slippage & Execution Models (`models/slippage.py`)
 
 **Model Implementations:**
+
 - ✅ `FixedPipsSlippage`: Consistent pip-based slippage
 - ✅ `PercentOfATRSlippage`: Volatility-adaptive slippage
 - ✅ `NoSlippage`: Perfect execution model
 
 **Realistic Execution Costs:**
+
 - ✅ **Slippage**: Applied directionally (BUY +slip, SELL -slip)
 - ✅ **Spread**: Half-spread cost per side
 - ✅ **Commission**: Per-lot fee calculation
@@ -39,12 +43,14 @@ class Feed(Protocol):
 ### 3. Feed-Compatible ATR Calculation (`feeds/atr.py`)
 
 **Unified ATR System:**
+
 ```python
 def calculate_atr(candles: list[Candle], period: int) -> float
 def fetch_atr_from_feed(feed: Feed, symbol: str, timeframe: str, period: int) -> float
 ```
 
 **Parity Validation:**
+
 - ✅ **Consistent Results**: Same ATR across live/backtest feeds
 - ✅ **Multiple Periods**: Stable across 10, 14, 20, 30 period lengths
 - ✅ **Data Length**: Robust with 50-2000+ candles
@@ -52,6 +58,7 @@ def fetch_atr_from_feed(feed: Feed, symbol: str, timeframe: str, period: int) ->
 ### 4. Settings Integration (`config/settings.py`)
 
 **Feed Configuration:**
+
 ```python
 class FeedSettings:
     feed_kind: FeedKind = "live"              # live | backtest
@@ -63,6 +70,7 @@ class FeedSettings:
 ```
 
 **Environment Override Support:**
+
 ```bash
 FEED_FEED_KIND=backtest
 FEED_SLIPPAGE_KIND=atr
@@ -72,6 +80,7 @@ FEED_ATR_SLIPPAGE_PERCENTAGE=3.0
 ### 5. Feed Factory (`feeds/factory.py`)
 
 **Bootstrap Integration:**
+
 ```python
 def create_feed(settings) -> Feed
 def create_slippage_model(settings) -> SlippageModel
@@ -83,12 +92,14 @@ feed = FeedWithSlippage(settings)  # Handles both live & backtest
 ## 🧪 Comprehensive Testing & Validation
 
 ### **Test Coverage:**
+
 - ✅ **Unit Tests**: All models, feeds, calculations (100% pass rate)
 - ✅ **Integration Tests**: Feed factory, settings, environment overrides
 - ✅ **Parity Tests**: ATR calculation consistency across feed types
 - ✅ **Acceptance Tests**: All requirement criteria validated
 
 ### **Data Validation:**
+
 - ✅ **Test Data**: Generated 9 CSV files (XAUUSD, EURUSD, GBPUSD × M30/H1/H4)
 - ✅ **Realistic OHLCV**: Proper high/low relationships, volume patterns
 - ✅ **ATR Ranges**: 0.327% - 0.564% of price (realistic for FX/Gold)
@@ -96,6 +107,7 @@ feed = FeedWithSlippage(settings)  # Handles both live & backtest
 ## 🏗️ Architecture & Integration
 
 ### **Pipeline Integration Points:**
+
 ```python
 # Bootstrap (no pipeline code changes needed)
 settings = ApplicationSettings()
@@ -112,6 +124,7 @@ commission = feed.get_commission_cost(lot_size)
 ```
 
 ### **Feed Switching (Settings-Only):**
+
 ```python
 # Live Trading
 export FEED_FEED_KIND=live
@@ -124,16 +137,19 @@ export FEED_BACKTEST_DATA_DIR=historical_data
 ## 🎯 Acceptance Criteria: COMPLETE
 
 ### ✅ **1. Feed Switching Via Settings Only**
+
 - **Implementation**: `FeedWithSlippage(settings)` auto-selects feed type
 - **Validation**: Same interface, no pipeline code changes
 - **Evidence**: Bootstrap factory pattern with settings-driven selection
 
 ### ✅ **2. ATR/Risk Calculations 1:1 Parity**
+
 - **Implementation**: Unified `calculate_atr()` function for both feeds
 - **Validation**: ATR difference < 0.001 between live/backtest
 - **Evidence**: Test shows 6.95101 ≈ 6.95101 (diff: 0.000000)
 
 ### ✅ **3. Slippage/Spread/Fee Models Working**
+
 - **Implementation**: Protocol-based models with directional application
 - **Validation**: BUY/SELL symmetry, realistic cost ranges
 - **Evidence**:
@@ -168,17 +184,20 @@ tests/test_feed_abstraction.py  # Comprehensive test suite
 ## 🚀 Production Features
 
 ### **Robustness:**
+
 - ✅ **Error Handling**: Graceful degradation on missing data/files
 - ✅ **Data Validation**: OHLCV integrity checks, duplicate removal
 - ✅ **Format Flexibility**: Handles MT5 export + generic OHLCV CSV formats
 - ✅ **Caching**: BacktestFeed caches loaded data for performance
 
 ### **Performance:**
+
 - ✅ **Fast ATR**: < 1ms calculation with pandas vectorization
 - ✅ **Memory Efficient**: Streaming data access, minimal footprint
 - ✅ **Configurable**: Environment-driven, no hardcoded paths
 
 ### **Extensibility:**
+
 - ✅ **Protocol-Based**: Easy to add new feed sources (database, API, etc.)
 - ✅ **Pluggable Slippage**: Can add sophisticated slippage models
 - ✅ **Multi-Timeframe**: Supports any MT5 timeframe (M1 to D1)
@@ -188,6 +207,7 @@ tests/test_feed_abstraction.py  # Comprehensive test suite
 **Status**: **🟢 PRODUCTION READY** - Feed Abstraction System Deployed
 
 **Commit Message**:
+
 ```
 feat(feed): add Feed abstraction (live/backtest) with slippage/spread/fee models
 

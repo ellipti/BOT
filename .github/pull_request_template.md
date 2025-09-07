@@ -1,151 +1,168 @@
----
-name: Pull Request
-about: Contribute to the Trading Bot project
-title: ""
-labels: ""
-assignees: ""
----
+## Summary
 
-## 📋 Pull Request Description
+<!-- Provide a clear and concise description of your changes -->
 
-### What does this PR do?
+## Type of Change
 
-<!-- Brief description of the changes -->
-
-### Type of Change
+<!-- Mark the type of change with an [x] -->
 
 - [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-- [ ] ✨ New feature (non-breaking change which adds functionality)
+- [ ] 🚀 New feature (non-breaking change which adds functionality)
 - [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📚 Documentation update
-- [ ] 🔧 Configuration change
-- [ ] 🧪 Test improvements
-- [ ] ♻️ Code refactoring
-- [ ] 🎨 Style/formatting changes
+- [ ] � Documentation update
+- [ ] 🧪 Test update
+- [ ] 🔧 Chore/refactoring
+- [ ] 🛡️ Security improvement
 
-## 🧪 Testing
+## Scope
 
-### Tests Added/Modified
+<!-- Which area of the codebase does this affect? -->
 
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] Backtest validation
-- [ ] Manual testing performed
+- [ ] Core trading logic
+- [ ] Risk management
+- [ ] MT5 integration
+- [ ] Telegram notifications
+- [ ] Configuration
+- [ ] Security & secrets
+- [ ] CI/CD pipeline
+- [ ] Documentation
 
-### Test Results
+## Quality Gates Checklist
 
-<!-- Paste test output or describe manual testing -->
+<!-- All items must be checked before requesting review - PR will be blocked until ALL quality gates pass -->
 
-```bash
-# Example test output
-pytest -v
-# Add your test results here
+### 🔍 Code Quality (CI Enforced)
+
+- [ ] Code formatted with Black (CI: `black --check .`)
+- [ ] Imports sorted with isort (CI: `isort --check-only .`)
+- [ ] No linting errors (CI: `ruff check .`)
+- [ ] Strict type checking passes (CI: `mypy .`)
+- [ ] No security issues (CI: `bandit -r . -f json`)
+- [ ] Dependencies are safe (CI: `safety check`)
+
+### 🧪 Cross-Platform Testing (CI Matrix)
+
+- [ ] Tests pass on **Windows** + Python 3.11
+- [ ] Tests pass on **Windows** + Python 3.12
+- [ ] Tests pass on **Ubuntu** + Python 3.11
+- [ ] Tests pass on **Ubuntu** + Python 3.12
+- [ ] All test matrix combinations successful
+
+### � Security Requirements
+
+- [ ] No secrets in code/PR diff
+- [ ] Sensitive data uses keyring storage
+- [ ] Secret scan passes (CI: automatic)
+- [ ] No hardcoded credentials or tokens
+- [ ] Proper log redaction for sensitive data
+
+### � Documentation & Testing
+
+- [ ] Code changes are documented with docstrings
+- [ ] README updated (if needed)
+- [ ] New functionality has unit tests
+- [ ] Integration tests updated (if needed)
+- [ ] Manual testing completed
+
+## Manual Testing
+
+<!-- Describe how you tested your changes -->
+
+**Test Environment:**
+
+- OS: <!-- Windows/Ubuntu/macOS -->
+- Python Version: <!-- 3.11/3.12 -->
+- Testing Mode: <!-- DRY_RUN=true/false -->
+
+**Test Steps:**
+
+1.
+2.
+3.
+
+**Expected Results:**
+
+-
+
+## Screenshots/Logs
+
+<!-- If applicable, add screenshots or log outputs -->
+
+```
+Paste relevant logs here
 ```
 
-## 📊 Performance Impact
+## Related Issues
 
-- [ ] No performance impact
-- [ ] Minor performance improvement
-- [ ] Significant performance improvement
-- [ ] Performance impact requires discussion
+<!-- Link any related issues -->
 
-### Benchmarks (if applicable)
+Closes #<!-- issue number -->
+Related to #<!-- issue number -->
 
-<!-- Include before/after performance metrics -->
+## Breaking Changes
 
-## 🔒 Security Considerations
+<!-- List any breaking changes and migration steps -->
 
-- [ ] No security implications
-- [ ] Security review required
-- [ ] Addresses security vulnerability
-- [ ] New dependencies added (list below)
+**⚠️ BREAKING CHANGES:**
 
-### New Dependencies
+-
 
-<!-- List any new dependencies and justify their inclusion -->
+**Migration Steps:**
 
-## 🔧 Configuration Changes
+1.
+2.
 
-- [ ] No configuration changes
-- [ ] New configuration parameters added
-- [ ] Existing configuration modified
-- [ ] Migration required
+## CI Status Summary
 
-### Configuration Updates Required
+<!-- This section will be auto-populated by CI results -->
 
-<!-- Document any configuration changes users need to make -->
+- Quality Gates: <!-- Will show ✅ or ❌ -->
+- Matrix Tests: <!-- Will show test results across all platforms -->
+- Security Scan: <!-- Will show security scan results -->
 
-## 📸 Screenshots/Charts (if applicable)
+## Additional Notes
 
-<!-- Add screenshots of charts, UI changes, or performance graphs -->
-
-## ✅ Checklist
-
-### Code Quality
-
-- [ ] Code follows the style guidelines of this project
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-
-### Testing
-
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Backtest results are reasonable and explained
-
-### Risk Management
-
-- [ ] Changes do not introduce new trading risks
-- [ ] Risk management functions are not compromised
-- [ ] Safety gates remain functional
-- [ ] Logging is adequate for debugging
-
-### Integration
-
-- [ ] Changes are compatible with existing integrations
-- [ ] Calendar guard functionality is preserved
-- [ ] Chart generation works correctly
-- [ ] Configuration loading is not broken
-
-## 🚀 Deployment Notes
-
-### Pre-deployment Steps
-
-<!-- List any steps required before deployment -->
-
-### Post-deployment Verification
-
-<!-- List steps to verify the deployment was successful -->
-
-## 📝 Additional Notes
-
-### Related Issues
-
-<!-- Link to related issues using #issue-number -->
-
-Fixes #
-Closes #
-Related to #
-
-### Breaking Changes
-
-<!-- Describe any breaking changes and migration path -->
-
-### Future Work
-
-<!-- Describe any follow-up work that should be done -->
+<!-- Any additional information for reviewers -->
 
 ---
 
-## 🔍 Review Checklist (for reviewers)
+## �️ Quality Gate Requirements
 
-- [ ] Code quality meets standards
-- [ ] Tests are comprehensive and pass
-- [ ] Documentation is updated
-- [ ] Security considerations addressed
-- [ ] Performance impact acceptable
-- [ ] Configuration changes documented
-- [ ] Risk management preserved
-- [ ] Ready for deployment
+<!-- These requirements are ENFORCED by CI - PRs cannot merge until ALL pass -->
+
+### Automated Quality Checks
+
+- **Black Formatting**: Code must be formatted (`black .`)
+- **isort Import Sorting**: Imports must be sorted (`isort .`)
+- **Ruff Linting**: No linting violations (`ruff check .`)
+- **MyPy Type Checking**: Strict type checking must pass (`mypy .`)
+- **Bandit Security**: No security issues (`bandit -r .`)
+- **Safety Dependencies**: All dependencies must be safe (`safety check`)
+
+### Cross-Platform Validation
+
+- **Windows + Python 3.11**: Full test suite must pass
+- **Windows + Python 3.12**: Full test suite must pass
+- **Ubuntu + Python 3.11**: Full test suite must pass
+- **Ubuntu + Python 3.12**: Full test suite must pass
+
+### Security Requirements
+
+- **Secret Scanning**: Automated secret detection must pass
+- **Keyring Integration**: Sensitive data must use secure storage
+- **Log Redaction**: No sensitive data in logs
+
+---
+
+## Reviewer Checklist
+
+<!-- For maintainers reviewing the PR -->
+
+- [ ] Code follows project conventions and patterns
+- [ ] All automated quality gates pass (CI green)
+- [ ] Security review completed - no sensitive data exposure
+- [ ] Cross-platform compatibility verified
+- [ ] Documentation is comprehensive and accurate
+- [ ] Breaking changes are properly documented with migration guide
+- [ ] Release notes impact considered
+- [ ] Manual testing approach is reasonable

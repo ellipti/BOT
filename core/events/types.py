@@ -183,3 +183,176 @@ class TradeBlocked(BaseEvent):
                 "governor_version": "v2",
             }
         }
+
+
+# === Order Lifecycle V2 Events ===
+
+
+class PendingCreated(BaseEvent):
+    """Order created and pending broker acceptance"""
+
+    client_order_id: str = Field(description="Client-generated order ID")
+    symbol: str = Field(description="Trading symbol")
+    side: str = Field(description="Trading direction (BUY/SELL)")
+    qty: float = Field(gt=0, description="Order quantity in lots")
+    price: float | None = Field(
+        default=None, description="Order price (None for market)"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+                "symbol": "XAUUSD",
+                "side": "BUY",
+                "qty": 0.1,
+                "price": 2485.50,
+            }
+        }
+
+
+class PendingActivated(BaseEvent):
+    """Order activated by broker with assigned ID"""
+
+    client_order_id: str = Field(description="Client-generated order ID")
+    broker_order_id: str = Field(description="Broker-assigned order ID")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+                "broker_order_id": "MT5_12345678",
+            }
+        }
+
+
+class PartiallyFilled(BaseEvent):
+    """Order partially filled"""
+
+    client_order_id: str = Field(description="Client-generated order ID")
+    fill_qty: float = Field(gt=0, description="Quantity filled in this event")
+    fill_price: float = Field(gt=0, description="Price of this fill")
+    cumulative_qty: float = Field(ge=0, description="Total quantity filled so far")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+                "fill_qty": 0.05,
+                "fill_price": 2485.75,
+                "cumulative_qty": 0.05,
+            }
+        }
+
+
+class CancelRequested(BaseEvent):
+    """Cancel request initiated for pending order"""
+
+    client_order_id: str = Field(description="Client-generated order ID to cancel")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+            }
+        }
+
+
+class Cancelled(BaseEvent):
+    """Order successfully cancelled"""
+
+    client_order_id: str = Field(description="Client-generated order ID")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+            }
+        }
+
+
+class StopUpdateRequested(BaseEvent):
+    """Request to update stop loss / take profit levels"""
+
+    client_order_id: str = Field(description="Client-generated order ID")
+    sl: float | None = Field(default=None, description="New stop loss price")
+    tp: float | None = Field(default=None, description="New take profit price")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+                "sl": 2470.0,
+                "tp": 2560.0,
+            }
+        }
+
+
+class StopUpdated(BaseEvent):
+    """Stop loss / take profit successfully updated"""
+
+    client_order_id: str = Field(description="Client-generated order ID")
+    sl: float | None = Field(default=None, description="Updated stop loss price")
+    tp: float | None = Field(default=None, description="Updated take profit price")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+                "sl": 2470.0,
+                "tp": 2560.0,
+            }
+        }
+
+
+class BreakevenTriggered(BaseEvent):
+    """Breakeven condition met, stop loss moved to entry"""
+
+    client_order_id: str = Field(description="Client-generated order ID")
+    new_sl: float = Field(description="New stop loss price (breakeven)")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+                "new_sl": 2485.50,
+            }
+        }
+
+
+# === Performance & Workload Isolation Events ===
+
+
+class ChartRequested(BaseEvent):
+    """Chart rendering request for async processing"""
+
+    client_order_id: str = Field(description="Context identifier for the request")
+    symbol: str = Field(description="Trading symbol")
+    timeframe: str = Field(description="Chart timeframe (e.g., M30, H1)")
+    out_path: str = Field(description="Output file path")
+    title: str | None = Field(default=None, description="Chart title")
+    bars_count: int = Field(default=200, description="Number of bars to render")
+    overlays: dict = Field(default_factory=dict, description="Chart overlays")
+    send_telegram: bool = Field(
+        default=False, description="Send to Telegram after rendering"
+    )
+    telegram_caption: str | None = Field(
+        default=None, description="Telegram message caption"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "client_order_id": "trade_20250907_143052_abc123",
+                "symbol": "XAUUSD",
+                "timeframe": "M30",
+                "out_path": "charts/XAUUSD_M30_20250907_143052.png",
+                "title": "XAUUSD Buy Signal",
+                "bars_count": 200,
+                "overlays": {
+                    "annotate_levels": {"entry": 2485.50, "sl": 2450.0, "tp": 2550.0}
+                },
+                "send_telegram": True,
+                "telegram_caption": "📈 Trade executed: XAUUSD BUY",
+            }
+        }

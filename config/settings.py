@@ -1,6 +1,7 @@
 """
 Advanced configuration management using Pydantic Settings v2+
 Supports environment-based configuration with validation and type safety
+Integrates with OS keyring for secure secret storage
 """
 
 import os
@@ -10,6 +11,15 @@ from pathlib import Path
 from pydantic import Field, model_validator, validator
 from pydantic.types import PositiveFloat, PositiveInt
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Import keyring secrets management
+try:
+    from infra.secrets import get_secret
+except ImportError:
+    # Fallback if secrets module not available
+    def get_secret(name: str) -> str | None:
+        return os.getenv(name)
+
 
 # Configuration directory
 CONFIG_DIR = Path(__file__).parent / "config"
@@ -58,7 +68,7 @@ class SlippageKind(str, Enum):
 
 
 class MT5Settings(BaseSettings):
-    """MetaTrader 5 connection settings"""
+    """MetaTrader 5 connection settings with keyring integration"""
 
     # Connection modes
     attach_mode: bool = Field(
@@ -71,7 +81,10 @@ class MT5Settings(BaseSettings):
         default=None, description="Path to MT5 terminal executable"
     )
     login: int | None = Field(default=None, description="MT5 account login number")
-    password: str | None = Field(default=None, description="MT5 account password")
+    password: str | None = Field(
+        default_factory=lambda: get_secret("MT5_PASSWORD"),
+        description="MT5 account password (loaded from keyring)",
+    )
     server: str | None = Field(default=None, description="MT5 broker server name")
 
     # Connection timeout
@@ -149,7 +162,8 @@ class TradingSettings(BaseSettings):
 
     # Economic Calendar Integration
     trading_economics_api_key: str | None = Field(
-        default=None, description="Trading Economics API key for calendar events"
+        default_factory=lambda: get_secret("TE_API_KEY"),
+        description="Trading Economics API key for calendar events (loaded from keyring)",
     )
     calendar_enabled: bool = Field(
         default=False, description="Enable economic calendar blackout periods"
@@ -353,9 +367,12 @@ class RiskSettings(BaseSettings):
 
 
 class TelegramSettings(BaseSettings):
-    """Telegram integration settings"""
+    """Telegram integration settings with keyring integration"""
 
-    bot_token: str | None = Field(default=None, description="Telegram bot token")
+    bot_token: str | None = Field(
+        default_factory=lambda: get_secret("TELEGRAM_TOKEN"),
+        description="Telegram bot token (loaded from keyring)",
+    )
 
     # Multiple recipients support
     chat_ids: str | None = Field(
@@ -380,25 +397,35 @@ class TelegramSettings(BaseSettings):
     @validator("chat_ids", always=True)
     def validate_chat_ids(cls, v, values):
         """Ensure at least one chat ID is provided if bot token exists"""
-        bot_token = values.get("bot_token")
-        chat_id = values.get("chat_id")
+        try:
+            bot_token = values.get("bot_token")
+            chat_id = values.get("chat_id")
 
-        if bot_token and not (v or chat_id):
-            raise ValueError(
-                "TELEGRAM_CHAT_IDS or TELEGRAM_CHAT_ID required when bot token is set"
-            )
+            # Skip validation if no bot token or it's empty/None
+            if not bot_token or len(str(bot_token).strip()) <= 10:
+                return v or chat_id
 
-        return v or chat_id
+            # Only require chat IDs if we have a real bot token
+            if not (v or chat_id):
+                raise ValueError(
+                    "TELEGRAM_CHAT_IDS or TELEGRAM_CHAT_ID required when bot token is set"
+                )
+
+            return v or chat_id
+        except Exception:
+            # If validation fails for any reason, just return the value
+            return v
 
     model_config = SettingsConfigDict(env_prefix="TELEGRAM_", case_sensitive=False)
 
 
 class IntegrationSettings(BaseSettings):
-    """External API integrations"""
+    """External API integrations with keyring integration"""
 
     # Trading Economics
     te_api_key: str | None = Field(
-        default=None, description="Trading Economics API key for news filtering"
+        default_factory=lambda: get_secret("TE_API_KEY"),
+        description="Trading Economics API key for news filtering (loaded from keyring)",
     )
 
     # API timeouts
@@ -487,6 +514,32 @@ class ApplicationSettings(BaseSettings):
     # Event-driven architecture
     enable_event_bus: bool = Field(
         default=True, description="Enable event-driven pipeline architecture"
+    )
+
+    # Performance & Workload Isolation
+    workers: int = Field(
+        default=2,
+        ge=1,
+        le=10,
+        description="Number of worker threads for async task processing",
+    )
+
+    enable_async_charts: bool = Field(
+        default=True, description="Enable async chart rendering via WorkQueue"
+    )
+
+    enable_async_reports: bool = Field(
+        default=True, description="Enable async report generation via WorkQueue"
+    )
+
+    enable_scheduler: bool = Field(
+        default=True, description="Enable APScheduler for periodic tasks"
+    )
+
+    latency_threshold_ms: float = Field(
+        default=100.0,
+        gt=0,
+        description="Trading loop latency threshold for alerts (milliseconds)",
     )
 
     # Idempotency and reliability

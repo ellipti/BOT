@@ -7,7 +7,7 @@ repos:
     rev: 25.1.0
     hooks:
       - id: black
-        language_version: python3.11
+        language_version: python3
         args: [--line-length=88]
 
   # isort - Import sorting
@@ -66,7 +66,7 @@ repos:
 
 # Configuration for specific hooks
 default_language_version:
-  python: python3.11
+  python: python3
 
 # Global settings
 fail_fast: false

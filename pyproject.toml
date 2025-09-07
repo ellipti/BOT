@@ -11,16 +11,14 @@ authors = [
 ]
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 keywords = ["trading", "bot", "metatrader", "mt5", "backtest", "risk-management", "forex", "automation", "production"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Financial and Insurance Industry",
     "Topic :: Office/Business :: Financial :: Investment",
     "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Operating System :: Microsoft :: Windows",
     "Environment :: No Input/Output (Daemon)",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -37,7 +35,7 @@ classifiers = [
 # Tool configurations
 [tool.black]
 line-length = 88
-target-version = ['py311']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -69,7 +67,7 @@ known_first_party = ["core", "risk", "services", "strategies", "integrations", "
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
@@ -147,7 +145,7 @@ exclude = [
 max-complexity = 10
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 warn_return_any = false
 warn_unused_configs = false
 disallow_untyped_defs = false

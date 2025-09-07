@@ -1,6 +1,6 @@
 # 🤖 Advanced Trading Bot
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
@@ -22,7 +22,7 @@ A production-ready automated trading bot for MetaTrader 5 with advanced risk man
 
 ### Prerequisites
 
-- **Python 3.11+** (recommended: 3.13)
+- **Python 3.12+** (recommended: 3.12.5)
 - **MetaTrader 5** terminal installed
 - **Windows OS** (primary support)
 - **Virtual environment** support
@@ -217,7 +217,7 @@ nssm status TradingBot
 
 ```dockerfile
 # Dockerfile example
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 COPY requirements.txt .

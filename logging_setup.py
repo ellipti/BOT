@@ -1,16 +1,114 @@
 """
 Advanced Logging System (Upgrade #05)
-JSON formatting + Rotating files + ELK/Sentry ready + Retention management
+JSON formatting + Rotating files + ELK/Sentry ready + Retention management + Security log redaction
 """
 
 import json
 import logging
 import logging.handlers
+import re
 import traceback
 from datetime import UTC, datetime
 from pathlib import Path
 
 from config.settings import get_settings
+
+# Security: Sensitive keys and patterns for log redaction
+SENSITIVE_KEYS = [
+    "token",
+    "api_key",
+    "password",
+    "secret",
+    "mt5_password",
+    "telegram_token",
+    "te_api_key",
+    "bot_token",
+    "auth_token",
+    "access_token",
+    "refresh_token",
+    "private_key",
+    "certificate",
+    "credential",
+    "login",
+    "pin",
+    "otp",
+]
+
+# Compile regex patterns for sensitive data detection
+REDACTION_PATTERNS = [
+    re.compile(rf"({key}\s*[=:]\s*)([A-Za-z0-9_\-:.+/]{{6,}})", re.IGNORECASE)
+    for key in SENSITIVE_KEYS
+]
+
+# Additional patterns for common secret formats
+REDACTION_PATTERNS.extend(
+    [
+        # API keys (typical formats)
+        re.compile(
+            r"(['\"]?[a-z_]*api[_-]?key['\"]?\s*[=:]\s*['\"]?)([A-Za-z0-9_\-]{20,})['\"]?",
+            re.IGNORECASE,
+        ),
+        # Bearer tokens
+        re.compile(r"(bearer\s+)([A-Za-z0-9_\-\.]{20,})", re.IGNORECASE),
+        # JWT tokens (basic pattern)
+        re.compile(r"(eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+)(\.[A-Za-z0-9_\-]*)?"),
+        # URLs with embedded credentials
+        re.compile(r"(https?://[^:]+:)([^@]{4,})(@[^\s]+)", re.IGNORECASE),
+    ]
+)
+
+
+class RedactionFilter(logging.Filter):
+    """
+    Security filter to redact sensitive information from log messages
+    Protects against accidental logging of secrets, tokens, and passwords
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.redaction_count = 0
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """
+        Filter and redact sensitive information from log record
+
+        Args:
+            record: The log record to filter
+
+        Returns:
+            True (always allow record, but modify sensitive content)
+        """
+        try:
+            # Get the original message
+            original_msg = record.getMessage()
+            redacted_msg = original_msg
+
+            # Apply redaction patterns
+            for pattern in REDACTION_PATTERNS:
+                if pattern.search(redacted_msg):
+                    self.redaction_count += 1
+                    redacted_msg = pattern.sub(r"\1****", redacted_msg)
+
+            # Update the record message if redaction occurred
+            if redacted_msg != original_msg:
+                record.msg = redacted_msg
+                record.args = ()  # Clear args since we've already formatted the message
+
+                # Add a flag to indicate redaction occurred
+                record.redacted = True
+
+        except Exception:
+            # If redaction fails, don't break logging - just continue
+            pass
+
+        return True
+
+    def get_redaction_stats(self) -> dict:
+        """Get statistics about redaction activity"""
+        return {
+            "total_redactions": self.redaction_count,
+            "patterns_active": len(REDACTION_PATTERNS),
+        }
 
 
 class JsonFormatter(logging.Formatter):
@@ -176,7 +274,7 @@ def setup_advanced_logger(
     name: str = "bot", level: str | None = None
 ) -> logging.Logger:
     """
-    Setup advanced logging system with JSON formatting and rotation
+    Setup advanced logging system with JSON formatting, rotation, and security redaction
 
     Features:
     - JSON structured logs for ELK Stack compatibility
@@ -184,6 +282,7 @@ def setup_advanced_logger(
     - Separate error/warning level filtering
     - Telegram alerts for critical errors
     - Console output with readable formatting
+    - Security redaction of sensitive information
 
     Args:
         name: Logger name
@@ -211,6 +310,9 @@ def setup_advanced_logger(
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
 
+    # Create redaction filter instance
+    redaction_filter = RedactionFilter()
+
     # === Console Handler (Human-readable format) ===
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
@@ -219,6 +321,7 @@ def setup_advanced_logger(
     )
     console_formatter = logging.Formatter(console_format, datefmt="%Y-%m-%d %H:%M:%S")
     console_handler.setFormatter(console_formatter)
+    console_handler.addFilter(redaction_filter)  # Add security redaction
     logger.addHandler(console_handler)
 
     # === JSON File Handler (All levels, daily rotation) ===
@@ -229,6 +332,7 @@ def setup_advanced_logger(
     json_handler.setLevel(logging.DEBUG)  # Capture all levels in JSON
     json_formatter = JsonFormatter(include_trace=True)
     json_handler.setFormatter(json_formatter)
+    json_handler.addFilter(redaction_filter)  # Add security redaction
     logger.addHandler(json_handler)
 
     # === Error/Warning File Handler (Separate file for alerts) ===
@@ -239,6 +343,7 @@ def setup_advanced_logger(
     error_handler.setLevel(logging.WARNING)
     error_formatter = JsonFormatter(include_trace=True)
     error_handler.setFormatter(error_formatter)
+    error_handler.addFilter(redaction_filter)  # Add security redaction
     logger.addHandler(error_handler)
 
     # === Telegram Alert Handler (Critical errors only) ===
@@ -249,17 +354,20 @@ def setup_advanced_logger(
         )
         telegram_formatter = logging.Formatter(telegram_format)
         telegram_handler.setFormatter(telegram_formatter)
+        telegram_handler.addFilter(redaction_filter)  # Add security redaction
         logger.addHandler(telegram_handler)
 
     # Log system initialization
     logger.info(
-        "Дэвшилтэт лог систем эхэллээ",
+        "Дэвшилтэт лог систем эхэллээ (with security redaction)",
         extra={
             "log_level": level,
             "json_logs": True,
             "rotation": "daily",
             "retention_days": settings.logging.log_retention_days,
             "telegram_alerts": settings.telegram.error_alerts,
+            "security_redaction": True,
+            "redaction_patterns": len(REDACTION_PATTERNS),
         },
     )
 
