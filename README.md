@@ -5,28 +5,32 @@ MT5-based automated trading bot with safety features and audit capabilities.
 ## Setup
 
 ### Prerequisites
-- Python 3.11+ 
+
+- Python 3.11+
 - MetaTrader 5 terminal
 - Virtual environment support
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/ellipti/BOT.git
 cd BOT
 ```
 
 2. Create and activate virtual environment:
+
 ```bash
 python -m venv .venv
 # Windows
 .\.venv\Scripts\activate
-# Linux/macOS  
+# Linux/macOS
 source .venv/bin/activate
 ```
 
 3. Install dependencies:
+
 ```bash
 # Production environment
 pip install -r requirements.txt
@@ -38,6 +42,7 @@ pip install -r requirements-dev.txt
 ### Configuration
 
 1. Create `.env` file with your settings:
+
 ```bash
 # Example .env configuration
 MT5_TERMINAL_PATH=C:\Program Files\MetaTrader 5\terminal64.exe
@@ -79,11 +84,14 @@ python app.py --teletest
 
 1. Add new dependencies to `requirements.in` (production) or `requirements-dev.in` (development)
 2. Compile locked versions:
+
 ```bash
 pip-compile requirements.in
 pip-compile requirements-dev.in
 ```
+
 3. Install updated dependencies:
+
 ```bash
 pip-sync requirements-dev.txt
 ```
@@ -98,7 +106,7 @@ pytest
 
 ```bash
 black .          # Format code
-isort .          # Sort imports  
+isort .          # Sort imports
 flake8 .         # Lint code
 mypy .           # Type checking
 ```
@@ -131,7 +139,7 @@ mypy .           # Type checking
 ├── safety_gate.py        # Trading safety features & limits
 ├── core/                 # Core MT5 client & logging
 ├── services/             # External integrations (Telegram, charts)
-├── strategies/           # Trading strategies & indicators  
+├── strategies/           # Trading strategies & indicators
 ├── utils/                # Utilities (order execution)
 ├── state/                # Persistent state files
 └── requirements*.txt     # Dependencies (pip-tools)

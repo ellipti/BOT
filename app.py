@@ -9,7 +9,7 @@ from core.mt5_client import MT5Client
 from strategies.indicators import atr, rsi
 from safety_gate import Guard, Decision
 from strategies.baseline import ma_crossover_signal
-from services.telegram import TelegramClient
+from services.telegram_notify import send_text, send_photo, send_trade_notification, send_error_alert
 from services.chart_renderer import render_chart_with_overlays
 from services.trade_logging import append_trade_row
 from settings import settings
@@ -82,11 +82,6 @@ def run_once():
         return False
     
     account_balance = float(snap.get("balance", 0.0))
-
-    # Initialize Telegram if configured
-    tg = None
-    if settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_CHAT_ID:
-        tg = TelegramClient(settings.TELEGRAM_BOT_TOKEN, settings.TELEGRAM_CHAT_ID)
 
     # Setup Guard with settings
     guard = Guard(
@@ -199,31 +194,44 @@ def run_once():
                     dry_run=res.get("dry"),
                 )
             
-            if tg:
-                t = "DRY" if settings.DRY_RUN else f"TICKET {res['ticket']}"
+            # Send trade notification
+            t = "DRY RUN" if settings.DRY_RUN else f"TICKET {res['ticket']}"
+            
+            # Re-render chart with Entry/SL/TP annotations
+            try:
+                overlays_anno = overlays.copy()
+                overlays_anno["annotate_levels"] = {
+                    "entry": last_close,
+                    "sl": decision.sl_points,
+                    "tp": decision.tp_points
+                }
+                out_png_anno = render_chart_with_overlays(
+                    df.tail(200), overlays_anno, out_png_rel,
+                    f"{settings.SYMBOL} {decision.action}"
+                )
                 
-                # Re-render chart with Entry/SL/TP annotations
-                try:
-                    overlays_anno = overlays.copy()
-                    overlays_anno["annotate_levels"] = {
-                        "entry": last_close,
-                        "sl": decision.sl_points,
-                        "tp": decision.tp_points
-                    }
-                    out_png_anno = render_chart_with_overlays(
-                        df.tail(200), overlays_anno, out_png_rel,
-                        f"{settings.SYMBOL} {decision.action}"
-                    )
-                    
-                    # Send notifications
-                    tg.send(f"{base_msg}\n→ {t} | lot={decision.lot} | "
-                           f"SL={decision.sl_points:.2f} | TP={decision.tp_points:.2f}")
-                    tg.send_photo(out_png_anno, caption=f"{settings.SYMBOL} {decision.action} {t}")
-                    
-                except Exception as e:
-                    logger.exception("Failed to render/send annotated chart: %s", e)
+                # Send notifications using new system
+                send_trade_notification(
+                    symbol=settings.SYMBOL,
+                    action=decision.action,
+                    lot=decision.lot,
+                    entry=last_close,
+                    sl=sl_price,
+                    tp=tp_price,
+                    reason=decision.reason,
+                    ticket=res.get("ticket"),
+                    dry_run=settings.DRY_RUN
+                )
+                send_photo(out_png_anno, caption=f"{settings.SYMBOL} {decision.action} {t}")
+                
+            except Exception as e:
+                logger.exception("Failed to render/send annotated chart: %s", e)
+                send_error_alert(f"Chart rendering failed: {str(e)}", "Trade notification")
         else:
             logger.error(f"Ордер биелүүлж чадсангүй (safety gate): {res}")
+            # Send error notification
+            send_error_alert(f"Trade execution failed: {res.get('retcode', 'Unknown error')}", 
+                           f"{settings.SYMBOL} {decision.action}")
     else:
         logger.info("No trade after safety gate.")
 
