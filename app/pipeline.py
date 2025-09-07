@@ -18,6 +18,8 @@ from core.events import (
     Rejected,
     RiskApproved,
     SignalDetected,
+    TradeBlocked,
+    TradeClosed,
     Validated,
 )
 from core.executor import IdempotentOrderExecutor, make_coid
@@ -33,6 +35,7 @@ from core.sizing.sizing import (
     get_account_equity,
 )
 from observability.metrics import inc, observe, set_gauge
+from risk.governor_v2 import RiskGovernorV2
 
 if TYPE_CHECKING:
     from config.settings import ApplicationSettings
@@ -68,6 +71,9 @@ class TradingPipeline:
             broker=broker, db_path=settings.idempotency_db
         )
 
+        # Initialize RiskGovernorV2
+        self.risk_governor = RiskGovernorV2()
+
     def wire_handlers(self) -> None:
         """
         Register all pipeline event handlers.
@@ -86,6 +92,10 @@ class TradingPipeline:
         # Order placement handler
         self.bus.subscribe(RiskApproved, self._handle_risk_approved)
 
+        # Trade lifecycle handlers for RiskGovernorV2
+        self.bus.subscribe(TradeClosed, self._handle_trade_closed)
+        self.bus.subscribe(TradeBlocked, self._handle_trade_blocked)
+
         # Order execution handler (placeholder for now)
         self.bus.subscribe(OrderPlaced, self._handle_order_placed)
 
@@ -93,7 +103,7 @@ class TradingPipeline:
 
     def _handle_signal_detected(self, event: SignalDetected) -> None:
         """
-        Handle signal detection - perform basic validation.
+        Handle signal detection - perform basic validation and RiskGovernorV2 check.
 
         Args:
             event: SignalDetected event with trading signal
@@ -104,6 +114,30 @@ class TradingPipeline:
         logger.info(
             f"📡 Processing signal: {event.symbol} {event.side} strength={event.strength}"
         )
+
+        # Check RiskGovernorV2 before proceeding
+        now = datetime.now()
+        can_trade, risk_reason = self.risk_governor.can_trade(now)
+
+        if not can_trade:
+            logger.warning(f"🚫 Trade blocked by RiskGovernorV2: {risk_reason}")
+
+            # Publish TradeBlocked event
+            blocked_event = TradeBlocked(
+                symbol=event.symbol,
+                side=event.side,
+                reason=risk_reason,
+                governor_version="v2",
+            )
+            self.bus.publish(blocked_event)
+
+            # Increment blocked trades metric
+            inc(
+                "trades_blocked",
+                reason=risk_reason.split("(")[0].strip(),
+                symbol=event.symbol,
+            )
+            return
 
         # Placeholder validation logic
         # TODO: Add real validation (spread check, news filter, cooldown, etc.)
@@ -505,6 +539,115 @@ class TradingPipeline:
             "recent_orders": len(self.executor.get_sent_orders(limit=10)),
             "executor": str(self.executor),
         }
+
+    def _handle_trade_closed(self, event: TradeClosed) -> None:
+        """
+        Handle trade closure - update RiskGovernorV2 with trade result.
+
+        Args:
+            event: TradeClosed event with trade P&L
+        """
+        now = datetime.now()
+        self.risk_governor.on_trade_closed(event.pnl, now)
+
+        logger.info(
+            f"💰 Trade closed: PnL={event.pnl}, updated RiskGovernorV2",
+            extra={
+                "symbol": event.symbol if hasattr(event, "symbol") else "UNKNOWN",
+                "pnl": event.pnl,
+                "close_reason": (
+                    event.close_reason if hasattr(event, "close_reason") else "UNKNOWN"
+                ),
+            },
+        )
+
+        # Update metrics
+        inc("trades_closed", result="win" if event.pnl > 0 else "loss")
+        observe("trade_pnl", event.pnl)
+
+        # Update governor state metrics
+        state = self.risk_governor.get_state_summary()
+        set_gauge("consecutive_losses", state["consecutive_losses"])
+        set_gauge("session_trades_today", state["trades_today"])
+
+    def _handle_trade_blocked(self, event: TradeBlocked) -> None:
+        """
+        Handle trade blocked event - send Telegram ops alert.
+
+        Args:
+            event: TradeBlocked event with block reason
+        """
+        logger.warning(
+            f"🚫 Trade blocked: {event.symbol} {event.side} - {event.reason}",
+            extra={
+                "symbol": event.symbol,
+                "side": event.side,
+                "reason": event.reason,
+                "governor_version": event.governor_version,
+            },
+        )
+
+        # Send Telegram alert (if available)
+        try:
+            from risk.telegram_alerts import send_risk_alert
+
+            alert_message = (
+                f"/!\\ Risk block: {event.reason}\n"
+                f"Symbol: {event.symbol}\n"
+                f"Side: {event.side}\n"
+                f"Time: {event.ts.strftime('%H:%M:%S')}\n"
+                f"Governor: {event.governor_version}"
+            )
+
+            send_risk_alert(alert_message, level="WARNING")
+            logger.info("Risk block alert sent to Telegram")
+
+        except ImportError:
+            logger.debug("Telegram alerts not available")
+        except Exception as e:
+            logger.error(f"Failed to send risk block alert: {e}")
+
+    def apply_news_blackout(self, impact: str) -> None:
+        """
+        Apply news blackout based on calendar event impact.
+
+        This method should be called by calendar/news handlers when
+        high-impact events are detected.
+
+        Args:
+            impact: Event impact level ('high', 'medium', 'low')
+        """
+        now = datetime.now()
+        self.risk_governor.apply_news_blackout(impact, now)
+
+        logger.info(
+            f"📰 News blackout applied: impact={impact}",
+            extra={"impact": impact, "applied_at": now.isoformat()},
+        )
+
+        # Update metrics
+        inc("news_blackouts_applied", impact=impact)
+
+        # Send Telegram alert
+        try:
+            from risk.telegram_alerts import send_risk_alert
+
+            state = self.risk_governor.get_state_summary()
+            blackout_min = state.get("blackout_remaining_min", 0)
+
+            alert_message = (
+                f"/!\\ News blackout: {impact.upper()} impact event\n"
+                f"Trading blocked for {blackout_min:.1f} minutes\n"
+                f"Applied at: {now.strftime('%H:%M:%S')}"
+            )
+
+            send_risk_alert(alert_message, level="INFO")
+            logger.info("News blackout alert sent to Telegram")
+
+        except ImportError:
+            logger.debug("Telegram alerts not available")
+        except Exception as e:
+            logger.error(f"Failed to send news blackout alert: {e}")
 
 
 def build_pipeline(

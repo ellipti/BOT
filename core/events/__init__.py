@@ -11,6 +11,7 @@ from .types import (
     Rejected,
     RiskApproved,
     SignalDetected,
+    TradeBlocked,
     TradeClosed,
     Validated,
 )
@@ -27,4 +28,5 @@ __all__ = [
     "Filled",
     "Rejected",
     "TradeClosed",
+    "TradeBlocked",
 ]

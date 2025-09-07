@@ -218,6 +218,33 @@ class RiskSettings(BaseSettings):
         default=5, le=20, description="Дараалсан алдагдлын дээд тоо"
     )
 
+    # V2 Settings for RiskGovernorV2
+    max_consecutive_losses_v2: PositiveInt = Field(
+        default=3, le=10, description="RiskGovernorV2: Дараалсан алдагдлын дээд тоо"
+    )
+
+    max_trades_per_session: PositiveInt = Field(
+        default=5,
+        le=20,
+        description="RiskGovernorV2: Нэг session-д зөвшөөрөгдөх дээд арилжааны тоо",
+    )
+
+    cooldown_after_loss_min: PositiveInt = Field(
+        default=30,
+        le=480,
+        description="RiskGovernorV2: Алдагдлын дараах cooldown хугацаа (минут)",
+    )
+
+    # News blackout configuration
+    news_blackout_map: dict[str, list[int]] = Field(
+        default={
+            "high": [45, 45],  # [pre_minutes, post_minutes]
+            "medium": [20, 20],
+            "low": [5, 5],
+        },
+        description="RiskGovernorV2: Мэдээний impact-аас хамаарсан blackout хугацаа",
+    )
+
     # Risk level thresholds
     medium_risk_threshold: PositiveFloat = Field(
         default=40.0, le=100.0, description="Дунд эрсдэлийн босго (%)"

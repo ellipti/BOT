@@ -164,3 +164,22 @@ class TradeClosed(BaseEvent):
                 "close_reason": "TP",
             }
         }
+
+
+class TradeBlocked(BaseEvent):
+    """Trade blocked by risk governance event"""
+
+    symbol: str = Field(description="Trading symbol (e.g., XAUUSD)")
+    side: str = Field(description="Intended trading direction (BUY/SELL)")
+    reason: str = Field(description="Blocking reason from risk governor")
+    governor_version: str = Field(default="v2", description="Risk governor version")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "symbol": "XAUUSD",
+                "side": "BUY",
+                "reason": "LOSS_STREAK_COOLDOWN (үлдсэн: 25.3 мин)",
+                "governor_version": "v2",
+            }
+        }

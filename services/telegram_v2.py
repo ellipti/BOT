@@ -15,6 +15,7 @@ from core.logger import get_logger
 from .telegram_commands import (
     enhanced_help_command,
     enhanced_status_command,
+    handle_risk_status_command,
     health_command,
     metrics_command,
     quick_status_command,
@@ -162,6 +163,7 @@ def build_application(token: str) -> Application:
     application.add_handler(CommandHandler("qs", quick_status_command))
     application.add_handler(CommandHandler("metrics", metrics_command))
     application.add_handler(CommandHandler("health", health_command))
+    application.add_handler(CommandHandler("risk", handle_risk_status_command))
     application.add_handler(CommandHandler("help", enhanced_help_command))
 
     return application

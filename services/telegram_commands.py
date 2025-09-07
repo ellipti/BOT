@@ -251,6 +251,50 @@ async def quick_status_command(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text(f"❌ Quick status error: {str(e)}")
 
 
+async def handle_risk_status_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Handle /risk command - show RiskGovernorV2 status."""
+    try:
+        from risk.governor_v2 import RiskGovernorV2
+
+        # Initialize governor (will load current state)
+        governor = RiskGovernorV2()
+        summary = governor.get_state_summary()
+
+        # Format risk status message
+        status_icon = "✅" if summary["can_trade_now"] else "🚫"
+
+        message = f"""🛡️ **Risk Governance Status** {status_icon}
+
+📊 **Trading Session:**
+• Trades Today: {summary['trades_today']}/{summary['session_limit']}
+• Session Usage: {summary['session_usage_pct']:.1f}%
+
+🔥 **Loss Streak:**
+• Consecutive Losses: {summary['consecutive_losses']}
+• Cooldown Active: {'Yes' if summary['cooldown_active'] else 'No'}
+{f"• Cooldown Remaining: {summary['cooldown_remaining_min']:.1f}m" if summary['cooldown_active'] else ""}
+
+📰 **News Blackout:**
+• Blackout Active: {'Yes' if summary['blackout_active'] else 'No'}
+{f"• Blackout Remaining: {summary['blackout_remaining_min']:.1f}m" if summary['blackout_active'] else ""}
+
+🎯 **Trading Status:**
+• Can Trade Now: {'✅ Yes' if summary['can_trade_now'] else '❌ No'}
+• Last Trade: {summary['last_trade_ts'][-8:-3] if summary['last_trade_ts'] else 'None'}
+
+📅 **Session:** {summary['current_date']}
+"""
+
+        await update.message.reply_text(message, parse_mode="Markdown")
+        logger.info(f"Risk status sent to chat {update.effective_chat.id}")
+
+    except Exception as e:
+        logger.error(f"Risk status command failed: {e}")
+        await update.message.reply_text(f"❌ Risk status error: {str(e)}")
+
+
 # Enhanced help command with new commands
 async def enhanced_help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Enhanced help command showing all available commands."""
@@ -261,6 +305,7 @@ async def enhanced_help_command(update: Update, context: ContextTypes.DEFAULT_TY
 /qs - Quick status (one-line)
 /metrics - Detailed metrics summary
 /health - Health check results
+/risk - RiskGovernorV2 status & limits
 
 🤖 **General:**
 /start - Initialize bot
@@ -269,6 +314,7 @@ async def enhanced_help_command(update: Update, context: ContextTypes.DEFAULT_TY
 💡 **Tips:**
 • Use /qs for quick checks
 • Use /status for detailed info
+• Use /risk to check trading limits
 • Bot updates status every 30 seconds
 • Contact admin if status shows errors
 
