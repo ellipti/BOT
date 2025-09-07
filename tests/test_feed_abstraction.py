@@ -49,7 +49,7 @@ class TestCandle(unittest.TestCase):
             volume=1000.0,
         )
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(AttributeError):  # dataclasses.FrozenInstanceError in Python >= 3.11
             candle.close = 1960.0  # Should fail due to frozen=True
 
 

@@ -16,11 +16,11 @@ The MT5-less testing strategy provides:
 
 ### Test Categories
 
-| Test Type | Marker | Runs In CI | Requires MT5 | Purpose |
-|-----------|--------|------------|--------------|---------|
-| Unit Tests | `@pytest.mark.mt5_unit` | ✅ Yes | ❌ No | Test business logic with mocks |
-| Integration Tests | `@pytest.mark.mt5_integration` | ❌ No | ✅ Yes | Test real MT5 connectivity |
-| Broker Integration | `@pytest.mark.broker_integration` | ❌ No | ✅ Yes | Test live broker operations |
+| Test Type          | Marker                            | Runs In CI | Requires MT5 | Purpose                        |
+| ------------------ | --------------------------------- | ---------- | ------------ | ------------------------------ |
+| Unit Tests         | `@pytest.mark.mt5_unit`           | ✅ Yes     | ❌ No        | Test business logic with mocks |
+| Integration Tests  | `@pytest.mark.mt5_integration`    | ❌ No      | ✅ Yes       | Test real MT5 connectivity     |
+| Broker Integration | `@pytest.mark.broker_integration` | ❌ No      | ✅ Yes       | Test live broker operations    |
 
 ### Components
 
@@ -174,18 +174,21 @@ pytestmark = pytest.mark.skipif(
 ## 🎯 Benefits
 
 ### For CI/CD
+
 - ✅ **Fast builds**: No MT5 dependency installation
 - ✅ **Reliable**: No flaky external connections
 - ✅ **Cross-platform**: Works on Ubuntu, Windows, macOS
 - ✅ **Cost-effective**: Uses standard GitHub runners
 
 ### For Development
+
 - ✅ **Local flexibility**: Run integration tests when MT5 available
 - ✅ **Comprehensive coverage**: Unit tests cover business logic
 - ✅ **Fast feedback**: Mocked tests run quickly
 - ✅ **Idempotent**: No side effects during testing
 
 ### For Code Quality
+
 - ✅ **Separation of concerns**: Business logic vs. integration
 - ✅ **Testable design**: Forces good architecture
 - ✅ **Maintainable**: Easy to add new broker adapters
@@ -193,16 +196,17 @@ pytestmark = pytest.mark.skipif(
 
 ## 📊 Test Execution Matrix
 
-| Environment | Unit Tests | MT5 Integration | Broker Integration |
-|-------------|------------|----------------|-------------------|
-| **GitHub CI** | ✅ Pass (mocks) | ⏭️ Skip | ⏭️ Skip |
-| **Local (no MT5)** | ✅ Pass (mocks) | ⏭️ Skip | ⏭️ Skip |
-| **Local (with MT5)** | ✅ Pass (mocks) | ✅ Run | ✅ Run |
-| **Self-hosted CI** | ✅ Pass (mocks) | ✅ Run | ✅ Run |
+| Environment          | Unit Tests      | MT5 Integration | Broker Integration |
+| -------------------- | --------------- | --------------- | ------------------ |
+| **GitHub CI**        | ✅ Pass (mocks) | ⏭️ Skip         | ⏭️ Skip            |
+| **Local (no MT5)**   | ✅ Pass (mocks) | ⏭️ Skip         | ⏭️ Skip            |
+| **Local (with MT5)** | ✅ Pass (mocks) | ✅ Run          | ✅ Run             |
+| **Self-hosted CI**   | ✅ Pass (mocks) | ✅ Run          | ✅ Run             |
 
 ## 🔍 Example Test Results
 
 ### Public CI (No MT5)
+
 ```
 test_fake_broker_unit_test PASSED              ✅
 test_mt5_mock_functionality PASSED             ✅
@@ -211,6 +215,7 @@ test_broker_integration SKIPPED                ⏭️ (Broker not available)
 ```
 
 ### Local Development (With MT5)
+
 ```
 test_fake_broker_unit_test PASSED              ✅
 test_mt5_mock_functionality PASSED             ✅
@@ -221,21 +226,25 @@ test_broker_integration PASSED                 ✅
 ## 🎪 Running Tests
 
 ### All Tests (Skip Integration)
+
 ```bash
 pytest -m "not mt5_integration"
 ```
 
 ### Only Unit Tests
+
 ```bash
 pytest -m "mt5_unit"
 ```
 
 ### Only Integration Tests (if MT5 available)
+
 ```bash
 pytest -m "mt5_integration"
 ```
 
 ### Specific Test Categories
+
 ```bash
 pytest -m "event_bus"           # Event system tests
 pytest -m "order_book"          # Order book tests
@@ -244,6 +253,7 @@ pytest -m "feed"                # Data feed tests
 ```
 
 ### Coverage Report
+
 ```bash
 pytest --cov=core --cov=adapters --cov=tests --cov-report=html
 ```

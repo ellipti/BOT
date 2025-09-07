@@ -16,7 +16,6 @@ import tempfile
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
 
 from core.executor.order_book import OrderBook, OrderInfo, OrderStatus
 
@@ -421,7 +420,9 @@ class TestOrderBook:
             # Try to fill non-existent order
             try:
                 book.mark_partial("NON_EXISTENT", 1.0, 1.1000)
-                raise AssertionError("Should have raised ValueError for order not found")
+                raise AssertionError(
+                    "Should have raised ValueError for order not found"
+                )
             except ValueError as e:
                 assert "Order not found" in str(e)
 
@@ -430,13 +431,17 @@ class TestOrderBook:
 
             try:
                 book.mark_partial("INVALID_FILL", 0, 1.1000)
-                raise AssertionError("Should have raised ValueError for invalid fill quantity")
+                raise AssertionError(
+                    "Should have raised ValueError for invalid fill quantity"
+                )
             except ValueError as e:
                 assert "Invalid fill quantity" in str(e)
 
             try:
                 book.mark_partial("INVALID_FILL", -0.5, 1.1000)
-                raise AssertionError("Should have raised ValueError for invalid fill quantity")
+                raise AssertionError(
+                    "Should have raised ValueError for invalid fill quantity"
+                )
             except ValueError as e:
                 assert "Invalid fill quantity" in str(e)
 

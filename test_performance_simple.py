@@ -6,7 +6,7 @@ Tests WorkQueue, Scheduler, and LatencyTracker in isolation.
 
 import threading
 import time
-from typing import Any, Dict
+from typing import Any
 
 from core.events.bus import EventBus
 from core.events.types import ChartRequested

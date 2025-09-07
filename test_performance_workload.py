@@ -9,7 +9,6 @@ import threading
 import time
 from datetime import UTC, datetime, timezone
 from pathlib import Path
-from typing import List
 
 import pytest
 

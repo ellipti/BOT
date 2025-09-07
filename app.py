@@ -369,8 +369,6 @@ if __name__ == "__main__":
     if args.diag:
         sys.exit(0 if run_once() else 1)
     elif args.teletest:
-        from services.telegram_notify import send_photo, send_text
-
         send_text("✅ Telegram PING: bot is connected.")
         p = latest_chart_path_for(settings.trading.symbol)
         if p:

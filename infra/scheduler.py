@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from core.logger import get_logger
 from observability.metrics import inc, set_gauge

@@ -8,7 +8,7 @@ as the real MT5 broker but works entirely in memory without external dependencie
 import time
 import uuid
 from datetime import UTC, datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 from unittest.mock import MagicMock
 
 from core.events.bus import EventBus

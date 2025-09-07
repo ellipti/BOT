@@ -8,7 +8,7 @@ import threading
 import time
 from collections import deque
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from core.logger import get_logger
 from observability.metrics import observe, set_gauge

@@ -8,7 +8,7 @@ import logging
 import threading
 import time
 from datetime import datetime, timedelta
-from typing import List, Optional, Set
+from typing import Optional
 
 from core.events.types import (
     Cancelled,

@@ -8,7 +8,7 @@ import os
 import time
 from datetime import UTC, datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from config.settings import get_settings
 from core.logger import get_logger

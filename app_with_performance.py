@@ -98,7 +98,6 @@ def run_once_with_performance():
     try:
         # Main trading loop with comprehensive performance tracking
         with measure_trading_loop():
-
             # Phase 1: Data Fetching with latency measurement
             with measure_data_fetch():
                 logger.info("📊 Connecting to MT5 and fetching market data...")
@@ -471,8 +470,6 @@ if __name__ == "__main__":
         sys.exit(0 if success else 1)
 
     elif args.teletest:
-        from services.telegram_notify import send_photo, send_text
-
         send_text("✅ Telegram PING: Performance-enhanced bot is connected.")
         p = latest_chart_path_for(get_settings().trading.symbol)
         if p:

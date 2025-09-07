@@ -295,7 +295,6 @@ def atomic_write_json(
                 suffix=".json",
                 delete=False,
             ) as temp_file:
-
                 temp_path = Path(temp_file.name)
 
                 # Write JSON data
@@ -470,7 +469,6 @@ def atomic_update_json(
                 suffix=".json",
                 delete=False,
             ) as temp_file:
-
                 temp_path = Path(temp_file.name)
 
                 # Write JSON data

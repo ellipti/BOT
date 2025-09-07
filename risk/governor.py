@@ -398,7 +398,6 @@ class RiskGovernor:
                 daily["loss"] >= self.settings.risk.circuit_breaker_loss_threshold
                 or daily["consecutive_losses"] >= 5
             ):
-
                 data["circuit_breaker"]["state"] = CircuitBreakerState.OPEN.value
                 data["circuit_breaker"]["triggered_at"] = time.time()
                 data["circuit_breaker"]["recovery_time"] = time.time() + (

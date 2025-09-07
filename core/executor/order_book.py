@@ -10,7 +10,7 @@ import sqlite3
 import threading
 import time
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -244,31 +244,30 @@ class OrderBook:
         Raises:
             ValueError: If order not found or invalid fill
         """
-        with self._lock:
-            with self._get_connection() as conn:
-                # Get current order state
-                cur = conn.execute(
-                    """
-                    SELECT filled_qty, qty, avg_fill_price, symbol, side, status, sl, tp
-                    FROM orders WHERE coid = ?
-                """,
-                    (coid,),
-                )
-                row = cur.fetchone()
+        with self._lock, self._get_connection() as conn:
+            # Get current order state
+            cur = conn.execute(
+                """
+                SELECT filled_qty, qty, avg_fill_price, symbol, side, status, sl, tp
+                FROM orders WHERE coid = ?
+            """,
+                (coid,),
+            )
+            row = cur.fetchone()
 
-                if not row:
-                    raise ValueError(f"Order not found: {coid}")
+            if not row:
+                raise ValueError(f"Order not found: {coid}")
 
-                filled, total, avg_price, symbol, side, status, sl, tp = row
+            filled, total, avg_price, symbol, side, status, sl, tp = row
 
-                # Validate fill
-                if fill_qty <= 0:
-                    raise ValueError(f"Invalid fill quantity: {fill_qty}")
+            # Validate fill
+            if fill_qty <= 0:
+                raise ValueError(f"Invalid fill quantity: {fill_qty}")
 
-                if filled + fill_qty > total + 1e-9:  # Small tolerance
-                    raise ValueError(f"Over-fill: {filled + fill_qty} > {total}")
+            if filled + fill_qty > total + 1e-9:  # Small tolerance
+                raise ValueError(f"Over-fill: {filled + fill_qty} > {total}")
 
-                # Calculate new aggregate values
+            # Calculate new aggregate values
                 new_filled = filled + fill_qty
                 new_avg = ((avg_price * filled) + (price * fill_qty)) / max(
                     new_filled, 1e-9

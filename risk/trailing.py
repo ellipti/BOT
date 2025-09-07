@@ -5,7 +5,7 @@ Advanced stop management with profit-based breakeven and trailing stops.
 
 import logging
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 

@@ -23,7 +23,7 @@ class MT5Client:
         try:
             # Default: attach mode ON unless explicitly disabled
             if attach_mode is None:
-                attach_mode = self._env_bool("ATTACH_MODE", default=True)
+                attach_mode = self._env_bool("ATTACH_MODE", default="true")
             # Log connection attempt (non-sensitive fields only)
             try:
                 logger.info(
@@ -210,6 +210,6 @@ class MT5Client:
             self.initialized = False
             logger.info("MT5-аас амжилттай салгалаа")
 
-    def _env_bool(self, name: str, default: bool = True) -> bool:
-        v = os.getenv(name, os.getenv(name.lower(), "true" if default else "false"))
+    def _env_bool(self, name: str, default: str = "true") -> bool:
+        v = os.getenv(name, os.getenv(name.lower(), default))
         return str(v).strip().lower() in ("1", "true", "yes", "y")

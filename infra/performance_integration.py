@@ -7,7 +7,7 @@ Connects EventBus with WorkQueue and AsyncScheduler for isolated heavy task proc
 import os
 import time
 from datetime import UTC, datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from config.settings import get_settings
 from core.events.bus import EventBus
