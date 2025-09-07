@@ -1,0 +1,22 @@
+# Core MT5 trading
+MetaTrader5>=5.0.45
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Technical analysis
+ta>=0.10.0
+
+# Data viz
+matplotlib>=3.7.0
+mplfinance>=0.12.10b0
+
+# Config management
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# Integrations
+requests>=2.31.0
+python-telegram-bot>=20.0
+
+# Logging
+loguru>=0.7.0

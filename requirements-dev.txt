@@ -1,0 +1,16 @@
+# THIS FILE IS AUTO-GENERATED. DO NOT EDIT MANUALLY.
+# Generated from requirements-dev.in
+
+# Import base requirements
+-r requirements.txt
+
+# Development tools
+black==23.12.1
+flake8==7.0.0
+ipykernel==6.29.0
+isort==5.13.2
+mypy==1.8.0
+pytest==7.4.4
+pytest-cov==4.1.0
+pytest-watch==4.2.0
+python-semantic-release==8.7.0
