@@ -359,6 +359,11 @@ class ApplicationSettings(BaseSettings):
         default=True, description="Run in dry-run mode (no real trades)"
     )
 
+    # Event-driven architecture
+    enable_event_bus: bool = Field(
+        default=True, description="Enable event-driven pipeline architecture"
+    )
+
     # Component settings
     mt5: MT5Settings = Field(default_factory=MT5Settings)
     trading: TradingSettings = Field(default_factory=TradingSettings)
