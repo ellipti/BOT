@@ -493,6 +493,24 @@ class ObservabilitySettings(BaseSettings):
         default=60, description="Event lag threshold for health warnings"
     )
 
+    # Dashboard settings
+    enable_dash: bool = Field(
+        default=True, description="Enable FastAPI dashboard server"
+    )
+
+    dash_port: PositiveInt = Field(
+        default=8080, description="Port for dashboard server"
+    )
+
+    dash_host: str = Field(
+        default="127.0.0.1", description="Host to bind dashboard server"
+    )
+
+    dash_token: str = Field(
+        default_factory=lambda: get_secret("DASH_TOKEN") or "dev-dashboard-token-2025",
+        description="Dashboard authentication token (loaded from keyring or default)",
+    )
+
     model_config = SettingsConfigDict(env_prefix="METRICS_", case_sensitive=False)
 
 
@@ -667,6 +685,10 @@ class LegacySettings:
             "ENABLE_HTTP_METRICS": lambda: self._settings.observability.enable_http_metrics,
             "METRICS_PORT": lambda: self._settings.observability.metrics_port,
             "ENABLE_PROMETHEUS": lambda: self._settings.observability.enable_prometheus,
+            "ENABLE_DASH": lambda: self._settings.observability.enable_dash,
+            "DASH_PORT": lambda: self._settings.observability.dash_port,
+            "DASH_HOST": lambda: self._settings.observability.dash_host,
+            "DASH_TOKEN": lambda: self._settings.observability.dash_token,
             # Other
             "USD_PER_LOT_PER_USD_MOVE": lambda: self._settings.trading.usd_per_lot_per_usd_move,
         }

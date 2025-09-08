@@ -1,0 +1,98 @@
+/* Dashboard CSS - Additional styles beyond base template */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-container {
+    position: relative;
+    min-height: 400px;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #3182ce;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Order status colors */
+.status-PENDING { color: #3182ce; }
+.status-FILLED { color: #38a169; }
+.status-CANCELLED { color: #d69e2e; }
+.status-REJECTED { color: #e53e3e; }
+.status-PARTIAL { color: #d69e2e; }
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 0.5rem;
+    }
+
+    .nav {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .table {
+        font-size: 0.875rem;
+    }
+
+    .table th, .table td {
+        padding: 0.5rem 0.25rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #1a202c;
+        color: #e2e8f0;
+    }
+
+    .card {
+        background: #2d3748;
+        color: #e2e8f0;
+    }
+
+    .card-header {
+        background: #4a5568;
+        border-bottom: 1px solid #2d3748;
+    }
+
+    .table th {
+        background: #4a5568;
+        color: #e2e8f0;
+    }
+
+    .table th, .table td {
+        border-bottom: 1px solid #4a5568;
+    }
+}
