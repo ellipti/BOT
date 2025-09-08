@@ -1,0 +1,155 @@
+# Symbol Trading Profiles Configuration (Prompt-30)
+# Asset-specific trading parameters, session times, and constraints
+
+# Major Forex Pairs
+EURUSD:
+  asset: "forex"
+  tick_size: 0.0001 # 1 pip = 0.0001
+  tick_value: 10.0 # $10 per pip per standard lot
+  volume_min: 0.01 # 1 micro lot minimum
+  volume_max: 100.0 # 100 standard lots maximum
+  volume_step: 0.01 # 1 micro lot increments
+  tz: "UTC"
+  session: "24x5" # 24 hours, 5 days (Mon-Fri)
+  spread_typical: 0.5 # Typical spread in pips
+
+GBPUSD:
+  asset: "forex"
+  tick_size: 0.0001
+  tick_value: 10.0
+  volume_min: 0.01
+  volume_max: 100.0
+  volume_step: 0.01
+  tz: "UTC"
+  session: "24x5"
+  spread_typical: 0.8
+
+USDJPY:
+  asset: "forex"
+  tick_size: 0.001 # JPY pairs have 3 decimal places
+  tick_value: 9.43 # Approximate, varies with USDJPY rate
+  volume_min: 0.01
+  volume_max: 100.0
+  volume_step: 0.01
+  tz: "UTC"
+  session: "24x5"
+  spread_typical: 0.6
+
+# Precious Metals
+XAUUSD:
+  asset: "metal"
+  tick_size: 0.01 # 1 cent per ounce
+  tick_value: 1.0 # $1 per tick per standard lot (100oz)
+  volume_min: 0.01 # 1 oz minimum
+  volume_max: 100.0 # 10,000 oz maximum
+  volume_step: 0.01 # 1 oz increments
+  tz: "UTC"
+  session: "24x5" # 24 hours, 5 days (with brief gap Sun 22:00-23:00 UTC)
+  spread_typical: 30 # Typical spread in cents
+
+XAGUSD:
+  asset: "metal"
+  tick_size: 0.001 # 0.1 cent per ounce
+  tick_value: 0.5 # $0.50 per tick per standard lot (5000oz)
+  volume_min: 0.01
+  volume_max: 100.0
+  volume_step: 0.01
+  tz: "UTC"
+  session: "24x5"
+  spread_typical: 2 # Typical spread in 0.1 cents
+
+# Stock Indices
+US500:
+  asset: "index"
+  tick_size: 0.25 # $0.25 per point
+  tick_value: 12.5 # $12.50 per tick per contract (0.25 * 50)
+  volume_min: 1.0 # 1 contract minimum
+  volume_max: 1000.0 # 1000 contracts maximum
+  volume_step: 1.0 # 1 contract increments
+  tz: "America/New_York"
+  session: "RTH" # Regular Trading Hours (9:30-16:00 ET)
+  spread_typical: 0.25 # Typical spread in points
+
+NAS100:
+  asset: "index"
+  tick_size: 0.25
+  tick_value: 5.0 # $5 per tick per contract (0.25 * 20)
+  volume_min: 1.0
+  volume_max: 1000.0
+  volume_step: 1.0
+  tz: "America/New_York"
+  session: "RTH"
+  spread_typical: 0.50
+
+GER40:
+  asset: "index"
+  tick_size: 0.5 # €0.50 per point
+  tick_value: 12.5 # €12.50 per tick per contract
+  volume_min: 1.0
+  volume_max: 1000.0
+  volume_step: 1.0
+  tz: "Europe/Frankfurt"
+  session: "RTH" # 9:00-17:30 CET
+  spread_typical: 0.8
+
+# Cryptocurrencies
+BTCUSD:
+  asset: "crypto"
+  tick_size: 0.5 # $0.50 per tick
+  tick_value: 0.5 # $0.50 per tick per contract
+  volume_min: 0.001 # 0.001 BTC minimum
+  volume_max: 100.0 # 100 BTC maximum
+  volume_step: 0.001 # 0.001 BTC increments
+  tz: "UTC"
+  session: "24x7" # 24 hours, 7 days
+  spread_typical: 1.0 # Typical spread in USD
+
+ETHUSD:
+  asset: "crypto"
+  tick_size: 0.05 # $0.05 per tick
+  tick_value: 0.05 # $0.05 per tick per contract
+  volume_min: 0.01 # 0.01 ETH minimum
+  volume_max: 1000.0 # 1000 ETH maximum
+  volume_step: 0.01 # 0.01 ETH increments
+  tz: "UTC"
+  session: "24x7"
+  spread_typical: 0.2
+
+# Session Definitions
+sessions:
+  "24x5": # Forex/Metals: Sunday 22:00 UTC - Friday 22:00 UTC
+    days: [0, 1, 2, 3, 4, 6] # Monday-Friday + Sunday (for 22:00 opening)
+    start_time: "00:00" # Effectively always open during trading days
+    end_time: "23:59" # Effectively always open during trading days
+    breaks: [] # No intraday breaks
+
+  "24x7": # Crypto: Always open
+    days: [0, 1, 2, 3, 4, 5, 6] # All days
+    start_time: "00:00"
+    end_time: "23:59"
+    breaks: []
+
+  "RTH": # Regular Trading Hours (US markets)
+    days: [0, 1, 2, 3, 4] # Monday-Friday
+    start_time: "14:30" # 9:30 AM ET in UTC (EST)
+    end_time: "21:00" # 4:00 PM ET in UTC (EST)
+    breaks: [] # No lunch break
+
+# Default fallback configuration
+default:
+  asset: "unknown"
+  tick_size: 0.0001
+  tick_value: 1.0
+  volume_min: 0.01
+  volume_max: 100.0
+  volume_step: 0.01
+  tz: "UTC"
+  session: "24x5"
+  spread_typical: 1.0
+
+# Profile behavior settings
+settings:
+  prefer_profile: true # Use profile over MT5 info when available
+  strict_session: true # Block trades outside session hours
+  check_holidays: false # Enable holiday checking (requires holidays.yaml)
+  override_sizing: true # Override sizing with profile parameters

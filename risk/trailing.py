@@ -1,11 +1,15 @@
 """
 Trailing Stop and Breakeven Logic
 Advanced stop management with profit-based breakeven and trailing stops.
+Includes ATR-based dynamic trailing with hysteresis to reduce unnecessary adjustments.
 """
 
 import logging
 import time
 from typing import Any, Optional
+import pandas as pd
+
+from strategies.indicators import atr
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +25,16 @@ class TrailingStopManager:
     - Thread-safe position tracking
     """
 
-    def __init__(self, mt5):
+    def __init__(self, mt5, settings=None):
         """
         Initialize trailing stop manager
 
         Args:
             mt5: MetaTrader5 module instance
+            settings: Settings object for configuration
         """
         self.mt5 = mt5
+        self.settings = settings
         self._position_states: dict[str, dict] = {}  # Track position states
 
         logger.info("TrailingStopManager initialized")
@@ -90,14 +96,22 @@ class TrailingStopManager:
         position,
         trailing_step_pips: float = 5.0,
         trailing_buffer_pips: float = 10.0,
+        use_atr: bool = False,
+        atr_multiplier: float = 1.5,
+        hysteresis_pips: float = 2.0,
+        recent_candles: Optional[pd.DataFrame] = None,
     ) -> float | None:
         """
-        Compute trailing stop loss based on current favorable price movement.
+        Compute trailing stop loss with ATR-based dynamic trailing and hysteresis.
 
         Args:
             position: MT5 position object
             trailing_step_pips: Minimum step to move trailing stop (pips)
-            trailing_buffer_pips: Buffer distance behind current price (pips)
+            trailing_buffer_pips: Buffer distance behind current price (pips) - used if not ATR-based
+            use_atr: Whether to use ATR-based trailing (overrides trailing_buffer_pips)
+            atr_multiplier: ATR multiplier for trailing buffer when use_atr=True
+            hysteresis_pips: Hysteresis threshold to prevent rapid oscillations (pips)
+            recent_candles: Recent OHLC data for ATR calculation (required if use_atr=True)
 
         Returns:
             New trailing stop loss price, or None if no update needed
@@ -118,30 +132,90 @@ class TrailingStopManager:
 
             point = float(symbol_info.point)
 
+            # Calculate trailing buffer
+            if use_atr and recent_candles is not None:
+                # Use ATR-based dynamic trailing buffer
+                try:
+                    atr_period = self.settings.trading.atr_period if self.settings else 14
+                    current_atr = atr(recent_candles, period=atr_period)
+                    
+                    if pd.isna(current_atr) or current_atr is None or current_atr <= 0:
+                        logger.warning(f"Invalid ATR value {current_atr} for {symbol}, falling back to fixed buffer")
+                        trailing_buffer = trailing_buffer_pips * point
+                    else:
+                        # Convert ATR to pips then to price units
+                        atr_pips = current_atr / point
+                        trailing_buffer = (atr_pips * atr_multiplier) * point
+                        
+                        logger.debug(f"ATR trailing for {symbol}: ATR={current_atr:.5f}, "
+                                   f"ATR_pips={atr_pips:.1f}, buffer={trailing_buffer/point:.1f} pips")
+                except Exception as e:
+                    logger.warning(f"ATR calculation failed for {symbol}: {e}, using fixed buffer")
+                    trailing_buffer = trailing_buffer_pips * point
+            else:
+                # Use fixed pip-based trailing buffer
+                trailing_buffer = trailing_buffer_pips * point
+
+            # Get position state for hysteresis tracking
+            position_state = self._position_states.get(ticket, {})
+            last_trailing_sl = position_state.get("last_trailing_sl", None)
+
             # Calculate proposed trailing SL
             if position_type == 0:  # BUY position
                 # Trail below current price
-                proposed_sl = current_price - (trailing_buffer_pips * point)
+                proposed_sl = current_price - trailing_buffer
 
                 # Only update if moving SL up (more favorable)
                 if current_sl is None or proposed_sl > current_sl:
                     # Check minimum step requirement
-                    if current_sl is None or (proposed_sl - current_sl) >= (
+                    step_met = current_sl is None or (proposed_sl - current_sl) >= (
                         trailing_step_pips * point - 1e-9
-                    ):
+                    )
+                    
+                    # Check hysteresis - avoid rapid oscillations
+                    # Compare against last trailing SL or current SL if no trailing history
+                    reference_sl = last_trailing_sl if last_trailing_sl is not None else current_sl
+                    hysteresis_met = (
+                        reference_sl is None or 
+                        abs(proposed_sl - reference_sl) >= (hysteresis_pips * point)
+                    )
+                    
+                    if step_met and hysteresis_met:
+                        logger.debug(f"Trailing SL update for BUY {symbol} ticket {ticket}: "
+                                   f"current_sl={current_sl or 'None'} → proposed_sl={proposed_sl:.5f} "
+                                   f"(buffer={trailing_buffer/point:.1f} pips)")
                         return proposed_sl
+                    else:
+                        logger.debug(f"Trailing SL update skipped for {symbol}: "
+                                   f"step_met={step_met}, hysteresis_met={hysteresis_met}")
 
             else:  # SELL position
                 # Trail above current price
-                proposed_sl = current_price + (trailing_buffer_pips * point)
+                proposed_sl = current_price + trailing_buffer
 
                 # Only update if moving SL down (more favorable)
                 if current_sl is None or proposed_sl < current_sl:
                     # Check minimum step requirement
-                    if current_sl is None or (current_sl - proposed_sl) >= (
+                    step_met = current_sl is None or (current_sl - proposed_sl) >= (
                         trailing_step_pips * point - 1e-9
-                    ):
+                    )
+                    
+                    # Check hysteresis - avoid rapid oscillations
+                    # Compare against last trailing SL or current SL if no trailing history
+                    reference_sl = last_trailing_sl if last_trailing_sl is not None else current_sl
+                    hysteresis_met = (
+                        reference_sl is None or 
+                        abs(proposed_sl - reference_sl) >= (hysteresis_pips * point)
+                    )
+                    
+                    if step_met and hysteresis_met:
+                        logger.debug(f"Trailing SL update for SELL {symbol} ticket {ticket}: "
+                                   f"current_sl={current_sl or 'None'} → proposed_sl={proposed_sl:.5f} "
+                                   f"(buffer={trailing_buffer/point:.1f} pips)")
                         return proposed_sl
+                    else:
+                        logger.debug(f"Trailing SL update skipped for {symbol}: "
+                                   f"step_met={step_met}, hysteresis_met={hysteresis_met}")
 
             return None
 
@@ -194,16 +268,24 @@ class TrailingStopManager:
         breakeven_buffer: float = 2.0,
         trailing_step: float = 5.0,
         trailing_buffer: float = 10.0,
+        use_atr_trailing: bool = False,
+        atr_multiplier: float = 1.5,
+        hysteresis_pips: float = 2.0,
+        recent_candles: Optional[pd.DataFrame] = None,
     ) -> str | None:
         """
-        Process trailing logic for a single position.
+        Process trailing logic for a single position with ATR support.
 
         Args:
             position: MT5 position object
             breakeven_threshold: Breakeven trigger threshold (pips)
             breakeven_buffer: Breakeven buffer (pips)
             trailing_step: Trailing stop minimum step (pips)
-            trailing_buffer: Trailing stop buffer (pips)
+            trailing_buffer: Trailing stop buffer (pips) - used if not ATR-based
+            use_atr_trailing: Whether to use ATR-based trailing buffer
+            atr_multiplier: ATR multiplier for trailing buffer
+            hysteresis_pips: Hysteresis threshold to prevent oscillations (pips)
+            recent_candles: Recent OHLC data for ATR calculation
 
         Returns:
             Action taken: "breakeven", "trailing", or None
@@ -235,17 +317,24 @@ class TrailingStopManager:
                         action_taken = "breakeven"
 
             if not action_taken:
-                # Try trailing stop
+                # Try trailing stop with enhanced parameters
                 trailing_sl = self.compute_trailing_sl(
-                    position, trailing_step, trailing_buffer
+                    position=position,
+                    trailing_step_pips=trailing_step,
+                    trailing_buffer_pips=trailing_buffer,
+                    use_atr=use_atr_trailing,
+                    atr_multiplier=atr_multiplier,
+                    hysteresis_pips=hysteresis_pips,
+                    recent_candles=recent_candles,
                 )
 
                 if trailing_sl is not None:
                     if self.update_position_stops(ticket, sl=trailing_sl):
-                        # Update trailing state
+                        # Update trailing state with the actual applied SL
                         self._position_states[ticket] = {
                             **position_state,
                             "last_trailing_sl": trailing_sl,
+                            "last_update_time": time.time(),
                         }
                         action_taken = "trailing"
 
@@ -342,14 +431,15 @@ class TrailingStopManager:
             logger.debug(f"Reset state for position {ticket}")
 
 
-def create_trailing_stop_manager(mt5) -> TrailingStopManager:
+def create_trailing_stop_manager(mt5, settings=None) -> TrailingStopManager:
     """
     Factory function to create a TrailingStopManager instance.
 
     Args:
         mt5: MetaTrader5 module instance
+        settings: Settings object for configuration
 
     Returns:
         TrailingStopManager instance
     """
-    return TrailingStopManager(mt5)
+    return TrailingStopManager(mt5, settings)

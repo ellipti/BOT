@@ -1,184 +1,172 @@
-{% extends "base.html" %}
-
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <!-- Order Status Filter -->
-<div class="card" style="margin-bottom: 1.5rem;">
-    <div class="card-body">
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <strong>Filter by Status:</strong>
-            <a href="/orders" class="btn {% if not current_filter %}btn-active{% endif %}">All</a>
-            {% for status, count in status_counts.items() %}
-            <a href="/orders?status_filter={{ status }}"
-               class="btn btn-sm {% if current_filter == status %}btn-active{% endif %}"
-               style="background: {% if status == 'FILLED' %}#38a169{% elif status == 'PENDING' %}#3182ce{% elif status == 'CANCELLED' %}#d69e2e{% else %}#e53e3e{% endif %};">
-                {{ status }} ({{ count }})
-            </a>
-            {% endfor %}
-        </div>
+<div class="card" style="margin-bottom: 1.5rem">
+  <div class="card-body">
+    <div style="display: flex; gap: 1rem; align-items: center">
+      <strong>Filter by Status:</strong>
+      <a
+        href="/orders"
+        class="btn {% if not current_filter %}btn-active{% endif %}"
+        >All</a
+      >
+      {% for status, count in status_counts.items() %}
+      <a
+        href="/orders?status_filter={{ status }}"
+        class="btn btn-sm {% if current_filter == status %}btn-active{% endif %}"
+        style="background: {% if status == 'FILLED' %}#38a169{% elif status == 'PENDING' %}#3182ce{% elif status == 'CANCELLED' %}#d69e2e{% else %}#e53e3e{% endif %};"
+      >
+        {{ status }} ({{ count }})
+      </a>
+      {% endfor %}
     </div>
+  </div>
 </div>
 
 <!-- Orders Table -->
 <div class="card">
-    <div class="card-header">
-        Orders {% if current_filter %}- {{ current_filter }}{% endif %}
-        <div style="float: right;">
-            <span class="badge badge-info">{{ orders|length }} orders</span>
-        </div>
+  <div class="card-header">
+    Orders {% if current_filter %}- {{ current_filter }}{% endif %}
+    <div style="float: right">
+      <span class="badge badge-info">{{ orders|length }} orders</span>
     </div>
-    <div class="card-body" style="padding: 0; overflow-x: auto;">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Symbol</th>
-                    <th>Side</th>
-                    <th>Quantity</th>
-                    <th>Filled Qty</th>
-                    <th>Avg Fill Price</th>
-                    <th>Status</th>
-                    <th>SL</th>
-                    <th>TP</th>
-                    <th>Broker ID</th>
-                    <th>Created</th>
-                    <th>Updated</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                <tr>
-                    <td>
-                        <code style="font-size: 0.8em;">{{ order.coid }}</code>
-                    </td>
-                    <td>
-                        <strong>{{ order.symbol }}</strong>
-                    </td>
-                    <td>
-                        <span class="badge {% if order.side == 'BUY' %}badge-success{% else %}badge-danger{% endif %}">
-                            {{ order.side }}
-                        </span>
-                    </td>
-                    <td>{{ "%.4f"|format(order.qty) }}</td>
-                    <td>
-                        {{ "%.4f"|format(order.filled_qty) }}
-                        {% if order.qty > 0 %}
-                        <small style="color: #718096;">
-                            ({{ "%.1f"|format((order.filled_qty / order.qty) * 100) }}%)
-                        </small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if order.avg_fill_price > 0 %}
-                            {{ "%.5f"|format(order.avg_fill_price) }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="badge {% if order.status == 'FILLED' %}badge-success{% elif order.status == 'PENDING' %}badge-info{% elif order.status == 'PARTIAL' %}badge-warning{% elif order.status == 'CANCELLED' %}badge-warning{% else %}badge-danger{% endif %}">
-                            {{ order.status }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if order.sl %}
-                            {{ "%.5f"|format(order.sl) }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if order.tp %}
-                            {{ "%.5f"|format(order.tp) }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if order.broker_order_id %}
-                            <code style="font-size: 0.8em;">{{ order.broker_order_id }}</code>
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td class="timestamp">{{ order.created_time }}</td>
-                    <td class="timestamp">{{ order.updated_time }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        {% if not orders %}
-        <div style="text-align: center; color: #718096; padding: 3rem;">
-            {% if current_filter %}
-                No {{ current_filter.lower() }} orders found
-            {% else %}
-                No orders found
+  </div>
+  <div class="card-body" style="padding: 0; overflow-x: auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Symbol</th>
+          <th>Side</th>
+          <th>Quantity</th>
+          <th>Filled Qty</th>
+          <th>Avg Fill Price</th>
+          <th>Status</th>
+          <th>SL</th>
+          <th>TP</th>
+          <th>Broker ID</th>
+          <th>Created</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td>
+            <code style="font-size: 0.8em">{{ order.coid }}</code>
+          </td>
+          <td>
+            <strong>{{ order.symbol }}</strong>
+          </td>
+          <td>
+            <span
+              class="badge {% if order.side == 'BUY' %}badge-success{% else %}badge-danger{% endif %}"
+            >
+              {{ order.side }}
+            </span>
+          </td>
+          <td>{{ "%.4f"|format(order.qty) }}</td>
+          <td>
+            {{ "%.4f"|format(order.filled_qty) }} {% if order.qty > 0 %}
+            <small style="color: #718096">
+              ({{ "%.1f"|format((order.filled_qty / order.qty) * 100) }}%)
+            </small>
             {% endif %}
-        </div>
-        {% endif %}
+          </td>
+          <td>
+            {% if order.avg_fill_price > 0 %} {{
+            "%.5f"|format(order.avg_fill_price) }} {% else %} - {% endif %}
+          </td>
+          <td>
+            <span
+              class="badge {% if order.status == 'FILLED' %}badge-success{% elif order.status == 'PENDING' %}badge-info{% elif order.status == 'PARTIAL' %}badge-warning{% elif order.status == 'CANCELLED' %}badge-warning{% else %}badge-danger{% endif %}"
+            >
+              {{ order.status }}
+            </span>
+          </td>
+          <td>
+            {% if order.sl %} {{ "%.5f"|format(order.sl) }} {% else %} - {%
+            endif %}
+          </td>
+          <td>
+            {% if order.tp %} {{ "%.5f"|format(order.tp) }} {% else %} - {%
+            endif %}
+          </td>
+          <td>
+            {% if order.broker_order_id %}
+            <code style="font-size: 0.8em">{{ order.broker_order_id }}</code>
+            {% else %} - {% endif %}
+          </td>
+          <td class="timestamp">{{ order.created_time }}</td>
+          <td class="timestamp">{{ order.updated_time }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if not orders %}
+    <div style="text-align: center; color: #718096; padding: 3rem">
+      {% if current_filter %} No {{ current_filter.lower() }} orders found {%
+      else %} No orders found {% endif %}
     </div>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Order Statistics -->
 {% if orders %}
-<div class="grid" style="margin-top: 2rem;">
-    <div class="card">
-        <div class="card-header">
-            Quick Stats
-        </div>
-        <div class="card-body">
-            {% set filled_orders = orders | selectattr('status', 'equalto', 'FILLED') | list %}
-            {% set total_volume = orders | sum(attribute='qty') %}
-            {% set filled_volume = orders | sum(attribute='filled_qty') %}
+<div class="grid" style="margin-top: 2rem">
+  <div class="card">
+    <div class="card-header">Quick Stats</div>
+    <div class="card-body">
+      {% set filled_orders = orders | selectattr('status', 'equalto', 'FILLED')
+      | list %} {% set total_volume = orders | sum(attribute='qty') %} {% set
+      filled_volume = orders | sum(attribute='filled_qty') %}
 
-            <div class="metric">
-                <span>Total Volume</span>
-                <span class="metric-value">{{ "%.4f"|format(total_volume) }}</span>
-            </div>
-            <div class="metric">
-                <span>Filled Volume</span>
-                <span class="metric-value">{{ "%.4f"|format(filled_volume) }}</span>
-            </div>
-            <div class="metric">
-                <span>Fill Rate</span>
-                <span class="metric-value">
-                    {% if total_volume > 0 %}
-                        {{ "%.1f"|format((filled_volume / total_volume) * 100) }}%
-                    {% else %}
-                        0%
-                    {% endif %}
-                </span>
-            </div>
-            <div class="metric">
-                <span>Avg Order Size</span>
-                <span class="metric-value">
-                    {{ "%.4f"|format(total_volume / orders|length) }}
-                </span>
-            </div>
-        </div>
+      <div class="metric">
+        <span>Total Volume</span>
+        <span class="metric-value">{{ "%.4f"|format(total_volume) }}</span>
+      </div>
+      <div class="metric">
+        <span>Filled Volume</span>
+        <span class="metric-value">{{ "%.4f"|format(filled_volume) }}</span>
+      </div>
+      <div class="metric">
+        <span>Fill Rate</span>
+        <span class="metric-value">
+          {% if total_volume > 0 %} {{ "%.1f"|format((filled_volume /
+          total_volume) * 100) }}% {% else %} 0% {% endif %}
+        </span>
+      </div>
+      <div class="metric">
+        <span>Avg Order Size</span>
+        <span class="metric-value">
+          {{ "%.4f"|format(total_volume / orders|length) }}
+        </span>
+      </div>
     </div>
+  </div>
 
-    <div class="card">
-        <div class="card-header">
-            Symbol Breakdown
-        </div>
-        <div class="card-body">
-            {% set symbols = orders | groupby('symbol') %}
-            {% for symbol, symbol_orders in symbols %}
-            <div class="metric">
-                <span>{{ symbol }}</span>
-                <span class="metric-value">{{ symbol_orders | list | length }} orders</span>
-            </div>
-            {% endfor %}
-        </div>
+  <div class="card">
+    <div class="card-header">Symbol Breakdown</div>
+    <div class="card-body">
+      {% set symbols = orders | groupby('symbol') %} {% for symbol,
+      symbol_orders in symbols %}
+      <div class="metric">
+        <span>{{ symbol }}</span>
+        <span class="metric-value"
+          >{{ symbol_orders | list | length }} orders</span
+        >
+      </div>
+      {% endfor %}
     </div>
+  </div>
 </div>
 {% endif %}
 
 <style>
-.btn-active {
+  .btn-active {
     background: #2d3748 !important;
     color: white !important;
-}
+  }
 </style>
 {% endblock %}

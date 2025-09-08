@@ -8,5 +8,20 @@
     "last_execution": 1757250732.5341346,
     "test_field": "test_value",
     "trades": 1
+  },
+  "2025-09-08:XAUUSD": {
+    "trades": 0,
+    "baseline_equity": 10000.0,
+    "blocked": false
+  },
+  "2025-09-08:EURUSD": {
+    "trades": 0,
+    "baseline_equity": 10000.0,
+    "blocked": false
+  },
+  "2025-09-08:GBPUSD": {
+    "trades": 0,
+    "baseline_equity": 10000.0,
+    "blocked": false
   }
 }

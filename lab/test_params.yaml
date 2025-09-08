@@ -1,0 +1,46 @@
+# Simple test configuration with minimal parameters
+symbols:
+  - "XAUUSD"
+
+timeframes:
+  - 30
+
+atr_period:
+  - 14
+
+risk_pct:
+  - 0.01
+
+sl_mult:
+  - 1.5
+
+tp_mult:
+  - 3.0
+
+# Data configuration
+data:
+  source: "csv"
+  data_dir: "data"
+  start_date: "2024-01-01"
+  end_date: "2024-12-31"
+  min_bars: 200
+
+# Backtest configuration
+backtest:
+  initial_balance: 10000.0
+  commission_pips: 0.5
+  slippage_pips: 0.2
+  max_concurrent_trades: 1
+  warmup_bars: 50
+
+# Output configuration
+output:
+  results_file: "lab/out/results.csv"
+  summary_file: "lab/out/summary.md"
+  charts_dir: "lab/out/charts"
+  top_n_results: 5
+
+# Execution
+execution:
+  max_workers: 1
+  chunk_size: 10

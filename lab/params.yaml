@@ -1,0 +1,66 @@
+# Strategy Lab Parameter Grid Configuration
+# Define parameter ranges for backtesting optimization
+
+# Trading symbols to test
+symbols:
+  - "XAUUSD"
+  - "EURUSD"
+  - "GBPUSD"
+
+# Timeframes (in minutes)
+timeframes:
+  - 30 # M30
+  - 60 # H1
+  - 240 # H4
+
+# ATR configuration
+atr_period:
+  - 14
+  - 21
+  - 28
+
+# Risk management parameters
+risk_pct:
+  start: 0.005 # 0.5%
+  end: 0.03 # 3.0%
+  step: 0.005 # 0.5% increments
+
+# Stop Loss multipliers (ATR-based)
+sl_mult:
+  start: 1.0
+  end: 3.0
+  step: 0.5
+
+# Take Profit multipliers (ATR-based)
+tp_mult:
+  start: 1.5
+  end: 4.0
+  step: 0.5
+
+# Data configuration
+data:
+  source: "csv" # csv, mt5, or demo
+  data_dir: "data" # Directory with CSV files
+  start_date: "2024-01-01"
+  end_date: "2024-12-31"
+  min_bars: 200 # Minimum bars required for backtest
+
+# Backtest configuration
+backtest:
+  initial_balance: 10000.0
+  commission_pips: 0.5 # Commission in pips per trade
+  slippage_pips: 0.2 # Slippage in pips
+  max_concurrent_trades: 1 # Max simultaneous positions
+  warmup_bars: 50 # Bars for indicator warmup
+
+# Output configuration
+output:
+  results_file: "lab/out/results.csv"
+  summary_file: "lab/out/summary.md"
+  charts_dir: "lab/out/charts"
+  top_n_results: 10 # Top N results to show in summary
+
+# Parallel execution
+execution:
+  max_workers: 4 # Maximum parallel jobs
+  chunk_size: 50 # Combinations per chunk

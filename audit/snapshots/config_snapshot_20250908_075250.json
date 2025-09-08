@@ -1,0 +1,38 @@
+{
+  "snapshot_id": "20250908_075250",
+  "timestamp": "2025-09-08T07:52:50.590693Z",
+  "reason": "demo_snapshot",
+  "files": {
+    "config\\settings.py": {
+      "size": 28261,
+      "modified": "2025-09-08T15:00:04.433896Z",
+      "hash": "448ff3d61354151e110da4d468c50c12550096a8e0712a88fd820476bd9c3e04"
+    },
+    "configs\\experiments.yaml": {
+      "size": 2410,
+      "modified": "2025-09-08T14:08:01.488984Z",
+      "hash": "30714bc853b72fc897db4ff6ba25198808bd520c17771d1986404eb627f78f53"
+    },
+    "configs\\risk_regimes.yaml": {
+      "size": 1449,
+      "modified": "2025-09-08T15:00:04.707577Z",
+      "hash": "ff60b3e56fc1fdfcea10c36f42ff3785e0315435d10c2f7df78ce1e19afbc5a6"
+    },
+    "configs\\strategy.yaml": {
+      "size": 3050,
+      "modified": "2025-09-07T22:00:57.992028Z",
+      "hash": "a40e5eb2317c5b35155704fb732ec4f1e8a9276f8dad8217aed4e1a3261dc710"
+    },
+    "configs\\symbol_profiles.yaml": {
+      "size": 4443,
+      "modified": "2025-09-08T15:41:32.430725Z",
+      "hash": "d8e38f8d92bb57c8d1e1ae07d07e1247d4d429feb347d63c4fadd80b8dbeb72e"
+    }
+  },
+  "diffs": {},
+  "summary": {
+    "total_files": 5,
+    "changed_files": 0,
+    "total_size": 39613
+  }
+}

@@ -1,0 +1,40 @@
+# Risk Regime Configuration (Prompt-29)
+# Dynamic risk management based on market volatility conditions
+
+active: true
+
+# ATR calculation parameters
+atr_window: 14 # ATR calculation period (bars)
+ret_window: 96 # Return volatility window (H1: 4 days = 96 hours)
+
+# Volatility thresholds for regime classification
+# Using normalized ATR (ATR/price) as primary volatility measure
+thresholds:
+  low: 0.003 # Low volatility: < 0.3% normalized ATR
+  normal: 0.008 # Normal volatility: 0.3% - 0.8% normalized ATR
+  high: 0.015 # High volatility: >= 1.5% normalized ATR
+
+# Risk parameters by regime
+# Lower risk in high volatility, higher risk in low volatility
+params:
+  low: # Low volatility: more aggressive
+    RISK_PCT: 0.012 # 1.2% risk per trade
+    SL_MULT: 1.3 # Tighter stop loss
+    TP_MULT: 2.2 # Higher profit target
+
+  normal: # Normal volatility: standard parameters
+    RISK_PCT: 0.010 # 1.0% risk per trade
+    SL_MULT: 1.5 # Standard stop loss
+    TP_MULT: 2.0 # Standard profit target
+
+  high: # High volatility: more conservative
+    RISK_PCT: 0.006 # 0.6% risk per trade
+    SL_MULT: 1.8 # Wider stop loss
+    TP_MULT: 1.6 # Lower profit target
+
+# Fallback configuration
+default_regime: "normal" # Used when detection fails
+
+# Regime stability (prevent oscillations)
+min_regime_duration: 3 # Minimum bars before regime can change
+regime_confidence: 0.85 # Confidence threshold for regime changes

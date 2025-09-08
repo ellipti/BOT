@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trading-bot"
-version = "1.2.0"
+version = "1.0.0"
 description = "Production-Ready Automated Trading Bot with MT5 Integration, Advanced Risk Management, and Comprehensive Documentation"
 authors = [
     {name = "Trading Bot Team", email = "team@tradingbot.com"}

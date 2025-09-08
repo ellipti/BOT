@@ -98,10 +98,12 @@ def calc_sl_tp_by_atr(
 
 
 def calc_lot_by_risk(
-    symbol_info, entry: float, sl: float, equity: float, risk_pct: float
+    symbol_info, entry: float, sl: float, equity: float, risk_pct: float, symbol: str = None
 ) -> float:
     """
     Calculate position size in lots based on risk management.
+    
+    Enhanced with symbol profile support for multi-asset trading.
 
     Formula:
         lots = (equity × risk_pct) / (ticks_to_sl × tick_value_per_tick)
@@ -111,11 +113,12 @@ def calc_lot_by_risk(
         tick_value_per_tick = trade_tick_value (per 1 lot)
 
     Args:
-        symbol_info: MT5 symbol info object with trading parameters
+        symbol_info: MT5 symbol info object with trading parameters (may be overridden by profile)
         entry: Entry price
         sl: Stop loss price
         equity: Account equity
         risk_pct: Risk percentage (e.g., 0.01 for 1%)
+        symbol: Trading symbol for profile lookup (optional)
 
     Returns:
         float: Position size in lots, rounded to symbol constraints
@@ -123,6 +126,38 @@ def calc_lot_by_risk(
     Raises:
         ValueError: If invalid parameters or insufficient data
     """
+    # Try to use symbol profile for enhanced multi-asset support
+    if symbol:
+        try:
+            from core.symbols import get_profile_manager
+            
+            profile_manager = get_profile_manager()
+            if profile_manager.config.settings.override_sizing:
+                profile_params = profile_manager.get_symbol_info_override(symbol)
+                
+                # Create enhanced symbol info with profile data
+                class ProfileSymbolInfo:
+                    def __init__(self, profile_data, fallback_info=None):
+                        self.trade_tick_size = profile_data["trade_tick_size"]
+                        self.trade_tick_value = profile_data["trade_tick_value"]
+                        self.volume_min = profile_data["volume_min"]
+                        self.volume_max = profile_data["volume_max"]
+                        self.volume_step = profile_data["volume_step"]
+                        self.asset = profile_data["asset"]
+                        self.spread_typical = profile_data["spread_typical"]
+                        
+                        # Store original info for reference
+                        self._original_info = fallback_info
+                
+                symbol_info = ProfileSymbolInfo(profile_params, symbol_info)
+                logger.debug(f"Using symbol profile for {symbol}: {symbol_info.asset} asset")
+                
+        except ImportError:
+            logger.debug("Symbol profiles not available, using MT5 info")
+        except Exception as e:
+            logger.warning(f"Failed to load profile for {symbol}: {e}, using MT5 info")
+
+    # Validate symbol info attributes (works with both MT5 and profile objects)
     if not hasattr(symbol_info, "trade_tick_size"):
         raise ValueError("symbol_info missing trade_tick_size attribute")
 
@@ -175,10 +210,15 @@ def calc_lot_by_risk(
     # Round to symbol volume constraints
     final_lots = round_to_step(raw_lots, volume_step, volume_min, volume_max)
 
+    # Enhanced logging with asset info
+    asset_info = getattr(symbol_info, 'asset', 'unknown')
+    symbol_ref = symbol if symbol else 'UNKNOWN'
+    
     logger.info(
-        f"Position sizing: equity=${equity:.2f}, risk={risk_pct:.1%} (${risk_amount:.2f}), "
-        f"stop_distance={stop_distance_price:.5f} ({ticks_to_sl:.1f} ticks), "
-        f"tick_value=${tick_value:.2f} -> {raw_lots:.3f} lots -> {final_lots:.3f} lots (final)"
+        f"Position sizing [{symbol_ref}:{asset_info}]: equity=${equity:.2f}, "
+        f"risk={risk_pct:.1%} (${risk_amount:.2f}), stop_distance={stop_distance_price:.5f} "
+        f"({ticks_to_sl:.1f} ticks), tick_value=${tick_value:.2f} -> "
+        f"{raw_lots:.3f} lots -> {final_lots:.3f} lots (final)"
     )
 
     return final_lots
@@ -241,6 +281,58 @@ def fetch_atr(symbol: str, timeframe: int, period: int = 14) -> float | None:
     logger.debug(f"ATR({period}) for {symbol}: {current_atr:.5f}")
 
     return float(current_atr) if pd.notna(current_atr) else None
+
+
+def fetch_candles(symbol: str, timeframe: int, count: int = 100):
+    """
+    Fetch OHLC candle data from MT5 for regime detection.
+    
+    Args:
+        symbol: Trading symbol (e.g., "XAUUSD")
+        timeframe: MT5 timeframe constant
+        count: Number of candles to fetch
+        
+    Returns:
+        List[Candle]: List of candle objects or empty list if failed
+    """
+    try:
+        import MetaTrader5 as mt5
+        from feeds import Candle
+    except ImportError as e:
+        logger.error(f"MT5 or feeds import failed: {e}")
+        return []
+
+    if not mt5.initialize():
+        logger.error("MT5 not initialized for candle fetch")
+        return []
+
+    try:
+        # Fetch raw rates data
+        rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count)
+        
+        if rates is None or len(rates) == 0:
+            logger.error(f"No candle data available for {symbol} {timeframe}")
+            return []
+        
+        # Convert to Candle objects
+        candles = []
+        for rate in rates:
+            candle = Candle(
+                ts=int(rate['time']),
+                open=float(rate['open']),
+                high=float(rate['high']),
+                low=float(rate['low']),
+                close=float(rate['close']),
+                volume=float(rate['tick_volume'])  # Use tick_volume as proxy
+            )
+            candles.append(candle)
+        
+        logger.debug(f"Fetched {len(candles)} candles for {symbol}")
+        return candles
+        
+    except Exception as e:
+        logger.error(f"Error fetching candles for {symbol}: {e}")
+        return []
 
 
 def get_account_equity() -> float | None:

@@ -1,153 +1,154 @@
-{% extends "base.html" %}
-
-{% block content %}
-<div class="grid" style="margin-bottom: 2rem;">
-    <!-- System Health Status -->
-    <div class="card">
-        <div class="card-header">
-            System Health
-        </div>
-        <div class="card-body">
-            <div class="metric">
-                <span>Status</span>
-                <span class="metric-value status-{{ health_status.status }}">
-                    {{ health_status.status.upper() }}
-                </span>
-            </div>
-            <div class="metric">
-                <span>Components</span>
-                <span class="metric-value">{{ health_status.components|length }}</span>
-            </div>
-            {% if health_status.details.uptime %}
-            <div class="metric">
-                <span>Uptime</span>
-                <span class="metric-value">{{ "%.1f"|format(health_status.details.uptime) }}s</span>
-            </div>
-            {% endif %}
-        </div>
+{% extends "base.html" %} {% block content %}
+<div class="grid" style="margin-bottom: 2rem">
+  <!-- System Health Status -->
+  <div class="card">
+    <div class="card-header">System Health</div>
+    <div class="card-body">
+      <div class="metric">
+        <span>Status</span>
+        <span class="metric-value status-{{ health_status.status }}">
+          {{ health_status.status.upper() }}
+        </span>
+      </div>
+      <div class="metric">
+        <span>Components</span>
+        <span class="metric-value">{{ health_status.components|length }}</span>
+      </div>
+      {% if health_status.details.uptime %}
+      <div class="metric">
+        <span>Uptime</span>
+        <span class="metric-value"
+          >{{ "%.1f"|format(health_status.details.uptime) }}s</span
+        >
+      </div>
+      {% endif %}
     </div>
+  </div>
 
-    <!-- Key Performance Indicators -->
-    <div class="card">
-        <div class="card-header">
-            Key Metrics
-        </div>
-        <div class="card-body">
-            <div class="metric">
-                <span>Total Orders</span>
-                <span class="metric-value">{{ kpis.total_orders }}</span>
-            </div>
-            <div class="metric">
-                <span>Today P&L</span>
-                <span class="metric-value {{ 'status-healthy' if kpis.today_pnl >= 0 else 'status-error' }}">
-                    ${{ "%.2f"|format(kpis.today_pnl) }}
-                </span>
-            </div>
-            <div class="metric">
-                <span>Filled Orders</span>
-                <span class="metric-value">{{ kpis.filled_orders }}</span>
-            </div>
-            <div class="metric">
-                <span>Pending Orders</span>
-                <span class="metric-value">{{ kpis.pending_orders }}</span>
-            </div>
-        </div>
+  <!-- Key Performance Indicators -->
+  <div class="card">
+    <div class="card-header">Key Metrics</div>
+    <div class="card-body">
+      <div class="metric">
+        <span>Total Orders</span>
+        <span class="metric-value">{{ kpis.total_orders }}</span>
+      </div>
+      <div class="metric">
+        <span>Today P&L</span>
+        <span
+          class="metric-value {{ 'status-healthy' if kpis.today_pnl >= 0 else 'status-error' }}"
+        >
+          ${{ "%.2f"|format(kpis.today_pnl) }}
+        </span>
+      </div>
+      <div class="metric">
+        <span>Filled Orders</span>
+        <span class="metric-value">{{ kpis.filled_orders }}</span>
+      </div>
+      <div class="metric">
+        <span>Pending Orders</span>
+        <span class="metric-value">{{ kpis.pending_orders }}</span>
+      </div>
     </div>
+  </div>
 
-    <!-- Order Status Breakdown -->
-    <div class="card">
-        <div class="card-header">
-            Order Status Summary
-        </div>
-        <div class="card-body">
-            {% for status, count in orders_summary.status_counts.items() %}
-            <div class="metric">
-                <span>{{ status }}</span>
-                <span class="badge {% if status == 'FILLED' %}badge-success{% elif status == 'PENDING' %}badge-info{% elif status == 'CANCELLED' %}badge-warning{% else %}badge-danger{% endif %}">
-                    {{ count }}
-                </span>
-            </div>
-            {% endfor %}
-        </div>
+  <!-- Order Status Breakdown -->
+  <div class="card">
+    <div class="card-header">Order Status Summary</div>
+    <div class="card-body">
+      {% for status, count in orders_summary.status_counts.items() %}
+      <div class="metric">
+        <span>{{ status }}</span>
+        <span
+          class="badge {% if status == 'FILLED' %}badge-success{% elif status == 'PENDING' %}badge-info{% elif status == 'CANCELLED' %}badge-warning{% else %}badge-danger{% endif %}"
+        >
+          {{ count }}
+        </span>
+      </div>
+      {% endfor %}
     </div>
+  </div>
 </div>
 
 <!-- Recent Orders Table -->
 <div class="card">
-    <div class="card-header">
-        Recent Orders
-        <a href="/orders" class="btn btn-sm" style="float: right;">View All</a>
-    </div>
-    <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Symbol</th>
-                    <th>Side</th>
-                    <th>Quantity</th>
-                    <th>Filled</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders_summary.recent_orders %}
-                <tr>
-                    <td><code>{{ order.coid[:8] }}...</code></td>
-                    <td><strong>{{ order.symbol }}</strong></td>
-                    <td>
-                        <span class="badge {% if order.side == 'BUY' %}badge-success{% else %}badge-danger{% endif %}">
-                            {{ order.side }}
-                        </span>
-                    </td>
-                    <td>{{ order.qty }}</td>
-                    <td>{{ order.filled_qty }}</td>
-                    <td>
-                        <span class="badge {% if order.status == 'FILLED' %}badge-success{% elif order.status == 'PENDING' %}badge-info{% elif order.status == 'CANCELLED' %}badge-warning{% else %}badge-danger{% endif %}">
-                            {{ order.status }}
-                        </span>
-                    </td>
-                    <td class="timestamp">{{ order.created_time }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+  <div class="card-header">
+    Recent Orders
+    <a href="/orders" class="btn btn-sm" style="float: right">View All</a>
+  </div>
+  <div class="card-body">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Symbol</th>
+          <th>Side</th>
+          <th>Quantity</th>
+          <th>Filled</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders_summary.recent_orders %}
+        <tr>
+          <td><code>{{ order.coid[:8] }}...</code></td>
+          <td><strong>{{ order.symbol }}</strong></td>
+          <td>
+            <span
+              class="badge {% if order.side == 'BUY' %}badge-success{% else %}badge-danger{% endif %}"
+            >
+              {{ order.side }}
+            </span>
+          </td>
+          <td>{{ order.qty }}</td>
+          <td>{{ order.filled_qty }}</td>
+          <td>
+            <span
+              class="badge {% if order.status == 'FILLED' %}badge-success{% elif order.status == 'PENDING' %}badge-info{% elif order.status == 'CANCELLED' %}badge-warning{% else %}badge-danger{% endif %}"
+            >
+              {{ order.status }}
+            </span>
+          </td>
+          <td class="timestamp">{{ order.created_time }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-        {% if not orders_summary.recent_orders %}
-        <div style="text-align: center; color: #718096; padding: 2rem;">
-            No orders found
-        </div>
-        {% endif %}
+    {% if not orders_summary.recent_orders %}
+    <div style="text-align: center; color: #718096; padding: 2rem">
+      No orders found
     </div>
+    {% endif %}
+  </div>
 </div>
 
 <!-- Health Components Details -->
 {% if health_status.components %}
-<div class="card" style="margin-top: 2rem;">
-    <div class="card-header">
-        Component Health Details
-    </div>
-    <div class="card-body">
-        <div class="grid">
-            {% for component, details in health_status.components.items() %}
-            <div style="padding: 1rem; background: #f7fafc; border-radius: 0.375rem;">
-                <h4>{{ component }}</h4>
-                <div class="metric">
-                    <span>Status</span>
-                    <span class="status-{{ 'healthy' if details.status == 'UP' else 'error' }}">
-                        {{ details.status }}
-                    </span>
-                </div>
-                {% if details.message %}
-                <p style="margin-top: 0.5rem; color: #4a5568; font-size: 0.875rem;">
-                    {{ details.message }}
-                </p>
-                {% endif %}
-            </div>
-            {% endfor %}
+<div class="card" style="margin-top: 2rem">
+  <div class="card-header">Component Health Details</div>
+  <div class="card-body">
+    <div class="grid">
+      {% for component, details in health_status.components.items() %}
+      <div style="padding: 1rem; background: #f7fafc; border-radius: 0.375rem">
+        <h4>{{ component }}</h4>
+        <div class="metric">
+          <span>Status</span>
+          <span
+            class="status-{{ 'healthy' if details.status == 'UP' else 'error' }}"
+          >
+            {{ details.status }}
+          </span>
         </div>
+        {% if details.message %}
+        <p style="margin-top: 0.5rem; color: #4a5568; font-size: 0.875rem">
+          {{ details.message }}
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
     </div>
+  </div>
 </div>
-{% endif %}
-{% endblock %}
+{% endif %} {% endblock %}

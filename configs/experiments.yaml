@@ -1,0 +1,85 @@
+# Experiment Configuration
+# Strategy A/B Testing with Guardrails and Ramp-up
+
+active: true
+name: "strat_v1_ab"
+description: "A/B test for strategy v1 variants with progressive rollout"
+
+# A/B Test Arms Configuration
+arms:
+  A:
+    weight: 50
+    strategy_id: "strat_v1A"
+    description: "Current production strategy (baseline)"
+  B:
+    weight: 50
+    strategy_id: "strat_v1B"
+    description: "New optimized strategy variant"
+
+# Guardrails - Safety limits that trigger rollback
+guardrails:
+  rejected_rate_max: 0.05 # Max 5% order rejection rate
+  fill_timeout_max: 0.02 # Max 2% fill timeout rate
+  drawdown_day_max: 0.03 # Max 3% daily drawdown
+
+  # Evaluation windows
+  eval_window_min: 15 # Short-term evaluation (15 min)
+  eval_window_long: 60 # Long-term evaluation (60 min)
+
+  # Minimum sample size before evaluation
+  min_trades_eval: 10 # Need at least 10 trades to evaluate
+
+# Progressive Ramp-up Stages
+ramp:
+  stages:
+    - name: "canary"
+      pct: 0.10 # Start with 10% traffic
+      min_trades: 20 # Need 20 trades before next stage
+      duration_hours: 2 # Stay in canary for at least 2 hours
+
+    - name: "partial"
+      pct: 0.50 # Ramp to 50% traffic
+      min_trades: 100 # Need 100 trades before next stage
+      duration_hours: 6 # Stay in partial for at least 6 hours
+
+    - name: "full"
+      pct: 1.00 # Full rollout (100%)
+      min_trades: 300 # Full evaluation requires 300 trades
+      duration_hours: 24 # Run full for 24 hours before declaring success
+
+# Assignment Configuration
+assignment:
+  # Hash salt for deterministic assignment (change to re-randomize)
+  salt: "aivo_ab_2025_v1"
+
+  # Assignment granularity
+  bucket_hours: 1 # Reassign every hour for stability
+
+  # Override settings for testing
+  force_arm: null # Set to "A" or "B" to force assignment
+
+# Monitoring and Alerting
+monitoring:
+  # Telegram alerts
+  telegram_alerts: true
+  alert_channel: "ops" # Channel for experiment alerts
+
+  # Metrics collection
+  metrics_enabled: true
+  detailed_logging: true
+
+  # Report generation
+  report_frequency_hours: 6 # Generate reports every 6 hours
+
+# Rollback Configuration
+rollback:
+  # Automatic rollback conditions
+  auto_rollback: true
+
+  # Rollback to safe configuration (100% arm A)
+  safe_weights:
+    A: 100
+    B: 0
+
+  # Cooldown after rollback (hours)
+  cooldown_hours: 4

@@ -1,0 +1,479 @@
+{% extends "base.html" %} {% block title %}{{ title }}{% endblock %} {% block
+content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>{{ title }}</h1>
+    <div class="user-info">
+      <span>Logged in as: <strong>{{ user_id }}</strong></span>
+      <span class="roles">Roles: {{ ', '.join(user_roles) }}</span>
+      <button onclick="logout()" class="logout-btn">Logout</button>
+    </div>
+  </div>
+
+  <!-- User Statistics -->
+  <div class="stats-section">
+    <h2>User Statistics</h2>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ stats.total_users }}</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ stats.recent_logins }}</div>
+        <div class="stat-label">Recent Logins (7 days)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ stats.role_counts|length }}</div>
+        <div class="stat-label">Role Types</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="users-section">
+    <h2>User Management</h2>
+    <div class="table-container">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Roles</th>
+            <th>Created</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.email }}</td>
+            <td>
+              <span class="roles-badges">
+                {% for role in user.roles %}
+                <span class="role-badge role-{{ role }}">{{ role }}</span>
+                {% endfor %}
+              </span>
+            </td>
+            <td>{{ user.created_ts | timestamp_to_date }}</td>
+            <td>
+              {% if user.last_login_ts %} {{ user.last_login_ts |
+              timestamp_to_date }} {% else %}
+              <span class="never">Never</span>
+              {% endif %}
+            </td>
+            <td>
+              <button
+                class="btn-small btn-edit"
+                onclick="editUser('{{ user.id }}', '{{ user.email }}', {{ user.roles | tojson }})"
+              >
+                Edit
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Role Distribution -->
+  <div class="roles-section">
+    <h2>Role Distribution</h2>
+    <div class="roles-chart">
+      {% for role_csv, count in stats.role_counts.items() %}
+      <div class="role-item">
+        <span class="role-name">{{ role_csv }}</span>
+        <span class="role-count">{{ count }} users</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Audit Log Summary -->
+  <div class="audit-section">
+    <h2>Security Audit</h2>
+    <p>
+      Audit logs are stored in:
+      <code>logs/audit-{{ current_time[:4] }}.jsonl</code>
+    </p>
+    <div class="audit-info">
+      <p>Recent security events are logged including:</p>
+      <ul>
+        <li>Login attempts (successful/failed)</li>
+        <li>Token refresh operations</li>
+        <li>Role violations and access denials</li>
+        <li>User management actions</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="edit-user-modal" class="modal" style="display: none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Edit User</h3>
+      <span class="close" onclick="closeEditModal()">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form id="edit-user-form">
+        <input type="hidden" id="edit-user-id" />
+        <div class="form-group">
+          <label>Email:</label>
+          <input type="email" id="edit-user-email" readonly />
+        </div>
+        <div class="form-group">
+          <label>Roles:</label>
+          <div class="role-checkboxes">
+            <label
+              ><input type="checkbox" value="viewer" name="roles" />
+              Viewer</label
+            >
+            <label
+              ><input type="checkbox" value="trader" name="roles" />
+              Trader</label
+            >
+            <label
+              ><input type="checkbox" value="admin" name="roles" /> Admin</label
+            >
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Update User</button>
+          <button
+            type="button"
+            onclick="closeEditModal()"
+            class="btn-secondary"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  .admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .roles {
+    color: #666;
+  }
+
+  .logout-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+  }
+
+  .stat-label {
+    color: #666;
+    margin-top: 0.5rem;
+  }
+
+  .table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .users-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  .users-table th {
+    background: #f8f9fa;
+    font-weight: bold;
+  }
+
+  .role-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
+  }
+
+  .role-viewer {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+  .role-trader {
+    background: #fff3e0;
+    color: #f57c00;
+  }
+  .role-admin {
+    background: #ffebee;
+    color: #d32f2f;
+  }
+
+  .btn-small {
+    padding: 0.25rem 0.75rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+
+  .btn-edit {
+    background: #007bff;
+    color: white;
+  }
+
+  .never {
+    color: #999;
+    font-style: italic;
+  }
+
+  .roles-chart {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .role-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .role-item:last-child {
+    border-bottom: none;
+  }
+
+  .audit-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 2rem;
+  }
+
+  .audit-info ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+  }
+
+  /* Modal styles */
+  .modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .close {
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  .role-checkboxes {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .role-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: normal;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .btn-primary {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  function editUser(userId, email, roles) {
+    document.getElementById("edit-user-id").value = userId;
+    document.getElementById("edit-user-email").value = email;
+
+    // Clear all checkboxes
+    const checkboxes = document.querySelectorAll('input[name="roles"]');
+    checkboxes.forEach((cb) => (cb.checked = false));
+
+    // Check user's current roles
+    roles.forEach((role) => {
+      const checkbox = document.querySelector(`input[value="${role}"]`);
+      if (checkbox) checkbox.checked = true;
+    });
+
+    document.getElementById("edit-user-modal").style.display = "block";
+  }
+
+  function closeEditModal() {
+    document.getElementById("edit-user-modal").style.display = "none";
+  }
+
+  async function logout() {
+    try {
+      const response = await fetch("/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        window.location.href = "/login";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = "/login";
+    }
+  }
+
+  document
+    .getElementById("edit-user-form")
+    .addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const userId = document.getElementById("edit-user-id").value;
+      const selectedRoles = Array.from(
+        document.querySelectorAll('input[name="roles"]:checked')
+      ).map((cb) => cb.value);
+
+      try {
+        const response = await fetch(`/api/admin/users/${userId}/roles`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ roles: selectedRoles }),
+        });
+
+        if (response.ok) {
+          closeEditModal();
+          location.reload(); // Refresh page to show updated roles
+        } else {
+          const error = await response.json();
+          alert("Error updating user: " + (error.detail || "Unknown error"));
+        }
+      } catch (error) {
+        alert("Error updating user: " + error.message);
+      }
+    });
+
+  // Close modal when clicking outside
+  window.onclick = function (event) {
+    const modal = document.getElementById("edit-user-modal");
+    if (event.target == modal) {
+      closeEditModal();
+    }
+  };
+</script>
+{% endblock %}

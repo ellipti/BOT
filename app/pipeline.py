@@ -36,6 +36,7 @@ from core.sizing.sizing import (
 )
 from observability.metrics import inc, observe, set_gauge
 from risk.governor_v2 import RiskGovernorV2
+from audit.audit_logger import audit_order, audit_fill
 
 if TYPE_CHECKING:
     from config.settings import ApplicationSettings
@@ -311,6 +312,16 @@ class TradingPipeline:
         """
         start_time = time.time()
         client_order_id = event.client_order_id
+
+        # Audit log order placement
+        audit_order(
+            "OrderAccepted",
+            symbol=event.symbol,
+            side=event.side,
+            quantity=event.quantity,
+            price=event.price,
+            order_id=client_order_id
+        )
 
         # Track order placement
         inc("orders_placed", symbol=event.symbol, side=event.side)

@@ -1,0 +1,15 @@
+{
+  "created_at": "2025-09-08T07:52:50.772283Z",
+  "export_date": "2025-09-07",
+  "files": {
+    "config_snapshot.json": {
+      "size": 1229,
+      "sha256": "99c6beae3584830bff08bf70765e375dbdb26e9f1d3e1a4234def34b9dc240c5",
+      "modified": "2025-09-08T15:52:50.771347Z"
+    }
+  },
+  "summary": {
+    "total_files": 1,
+    "total_size": 1229
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "backup_id": "backup_20250908_163118",
+  "created_at": "2025-09-08T16:31:18.531613",
+  "backup_type": "full",
+  "system_info": {
+    "platform": "win32",
+    "python_version": "3.13.1 (tags/v3.13.1:0671451, Dec  3 2024, 19:06:28) [MSC v.1942 64 bit (AMD64)]",
+    "working_directory": "D:\\BOT\\BOT"
+  },
+  "contents": {
+    "databases": {
+      "databases": [
+        {
+          "name": "dash_users.sqlite",
+          "size": 20480,
+          "original_checksum": "407e862ba034d04a1b9f44bc3595527c288585a862c66abb71941d2fd4ec10ad",
+          "backup_checksum": "de22bd36ce68cb48131a041c71265bec8608fe47a47c3ad97fde31c3097fa236",
+          "backup_time": "2025-09-08T16:31:18.247639"
+        },
+        {
+          "name": "id_store.sqlite",
+          "size": 12288,
+          "original_checksum": "c9627efe0259261c5cae44d81d0af4de239ee7d5ac653e70eabecbe1f38100eb",
+          "backup_checksum": "3b47d7a3346afac32a58e7328aec266f0ae97d41a4dc382d2deb4b64a33484d0",
+          "backup_time": "2025-09-08T16:31:18.253954"
+        }
+      ],
+      "total_size": 32768,
+      "backup_method": "hot_backup"
+    },
+    "configs": {
+      "files": [
+        {
+          "name": "experiments.yaml",
+          "size": 2410,
+          "checksum": "30714bc853b72fc897db4ff6ba25198808bd520c17771d1986404eb627f78f53",
+          "modified": "2025-09-08T14:08:01.488984"
+        },
+        {
+          "name": "risk_regimes.yaml",
+          "size": 1449,
+          "checksum": "ff60b3e56fc1fdfcea10c36f42ff3785e0315435d10c2f7df78ce1e19afbc5a6",
+          "modified": "2025-09-08T15:00:04.707577"
+        },
+        {
+          "name": "strategy.yaml",
+          "size": 3050,
+          "checksum": "a40e5eb2317c5b35155704fb732ec4f1e8a9276f8dad8217aed4e1a3261dc710",
+          "modified": "2025-09-07T22:00:57.992028"
+        },
+        {
+          "name": "symbol_profiles.yaml",
+          "size": 4441,
+          "checksum": "e43312e6d9c735fac9504c53bedaf94be8cbde9b77066721fc449994d9762ca0",
+          "modified": "2025-09-08T15:54:36.074984"
+        }
+      ],
+      "total_size": 11350
+    },
+    "logs": {
+      "files": [
+        {
+          "name": "app-2025-09-08.json",
+          "size": 411320,
+          "checksum": "7a4e8b56f80998bb4cfe1351ab11b923aa92714865c21f1edf87997b013017d1",
+          "modified": "2025-09-08T05:24:35.403362"
+        },
+        {
+          "name": "app.json",
+          "size": 2169905,
+          "checksum": "2dfdc48a99757675828b1f816b39d727dd97f07af6d5d0ae17ee344872dd1f1a",
+          "modified": "2025-09-08T15:23:25.699933"
+        },
+        {
+          "name": "audit-2025.jsonl",
+          "size": 1081,
+          "checksum": "83691eb5d717ef322821235328884b419b374e07148d04b901cf81b8826beed2",
+          "modified": "2025-09-08T14:46:02.723736"
+        },
+        {
+          "name": "audit-20250908.jsonl",
+          "size": 2239,
+          "checksum": "78ec2328b0244e06af2d0477f077da60e09fb382021966bbefaa24fff6aea761",
+          "modified": "2025-09-08T15:53:13.983586"
+        },
+        {
+          "name": "errors.json",
+          "size": 42375,
+          "checksum": "0a2f78c9135dd8cd681246d7ed69e76b3a60a7a6154d5793c612911e78c4d604",
+          "modified": "2025-09-08T02:59:06.731440"
+        },
+        {
+          "name": "trading_2025-09-01.log",
+          "size": 112937,
+          "checksum": "64c672da1d9dc982c9526767cc58e6805a1f39569bb011296d986a3d3bb6ead9",
+          "modified": "2025-09-01T21:15:27.989933"
+        },
+        {
+          "name": "trading_2025-09-02.log",
+          "size": 33128,
+          "checksum": "146a7cb3b9e768ff347c3cb310dddcf1c959f31104c1191cb9db806ed1b550bb",
+          "modified": "2025-09-02T04:53:01.849078"
+        },
+        {
+          "name": "trading_2025-09-04.log",
+          "size": 918,
+          "checksum": "eac086f9d9ad1e7bc9b6c5752e88fcd51847b9ff60e7e734a9342f1b5511d282",
+          "modified": "2025-09-04T19:03:17.326377"
+        },
+        {
+          "name": "trading_2025-09-07.log",
+          "size": 5776,
+          "checksum": "5f1a55baaf334ac35083df3e4f79d16860e13518158612105f63e90faa327f47",
+          "modified": "2025-09-07T22:37:47.469213"
+        },
+        {
+          "name": "trading_2025-09-08.log",
+          "size": 2302639,
+          "checksum": "c2b6b93c06961245e3011f41a9dc8549b1fa6e186a1dcca8892e0bb98ba75bac",
+          "modified": "2025-09-08T13:01:33.515865"
+        }
+      ],
+      "total_size": 5082318,
+      "max_age_days": 7
+    },
+    "audit": {
+      "files": [
+        {
+          "name": "audit_logger.py",
+          "size": 9431,
+          "checksum": "64596882334fbeaa68b126160a482079865c918b12eb63347b2b5fe61b500c16",
+          "modified": "2025-09-08T15:54:35.767014"
+        },
+        {
+          "name": "config_snapshot.py",
+          "size": 9950,
+          "checksum": "ed4b3f2408daf290b67e852cd3d5219fe2a5113f6202c0d9f9f6a5e10fbe5d6b",
+          "modified": "2025-09-08T15:54:35.767014"
+        },
+        {
+          "name": "snapshots\\config_snapshot_20250908_075250.json",
+          "size": 1229,
+          "checksum": "99c6beae3584830bff08bf70765e375dbdb26e9f1d3e1a4234def34b9dc240c5",
+          "modified": "2025-09-08T15:52:50.733346"
+        },
+        {
+          "name": "__pycache__\\audit_logger.cpython-313.pyc",
+          "size": 10344,
+          "checksum": "3fcbe06d25d521973677ab90f454a3820231e17905f4d2fb1cffcb5f1ae7a258",
+          "modified": "2025-09-08T15:52:50.030858"
+        },
+        {
+          "name": "__pycache__\\config_snapshot.cpython-313.pyc",
+          "size": 10799,
+          "checksum": "5bc4d75d583b9fabf97e7852767fc6a2824dcba3e8c114bfe96a6cb527af520b",
+          "modified": "2025-09-08T15:52:03.641370"
+        }
+      ],
+      "total_size": 41753
+    },
+    "state": {
+      "files": [
+        {
+          "name": "last_decision.json",
+          "size": 3,
+          "checksum": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+          "modified": "2025-09-07T22:17:07.679894"
+        },
+        {
+          "name": "bandit_results.json",
+          "size": 20669,
+          "checksum": "f82baeadcb9348e2e3d20338e1cd8abe057c6311b306292f03bdedd2b23afc03",
+          "modified": "2025-09-08T05:16:18.233054"
+        },
+        {
+          "name": "last_decision.json",
+          "size": 3,
+          "checksum": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+          "modified": "2025-09-07T22:17:07.679894"
+        }
+      ],
+      "total_size": 20675
+    }
+  },
+  "integrity": {
+    "manifest_checksum": "5de7be9e30a19caaedb116c96e71a3b34eb6a446fd50c02e45c458eceaaf8b67",
+    "total_files": 24,
+    "total_size": 5188864
+  }
+}

@@ -7,6 +7,7 @@ Integrates with OS keyring for secure secret storage
 import os
 from enum import Enum
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, model_validator, validator
 from pydantic.types import PositiveFloat, PositiveInt
@@ -50,6 +51,13 @@ class LogLevel(str, Enum):
     INFO = "INFO"
     WARNING = "WARNING"
     ERROR = "ERROR"
+
+
+class BrokerKind(str, Enum):
+    """Broker adapter types"""
+
+    MT5 = "mt5"
+    PAPER = "paper"
 
 
 class FeedKind(str, Enum):
@@ -153,6 +161,41 @@ class TradingSettings(BaseSettings):
     )
     take_profit_multiplier: PositiveFloat = Field(
         default=3.0, alias="tp_mult", description="Take profit ATR multiplier"
+    )
+
+    # Trailing Stop Configuration
+    trail_use_atr: bool = Field(
+        default=True, description="Use ATR-based dynamic trailing buffer"
+    )
+    trail_atr_mult: PositiveFloat = Field(
+        default=1.5, description="ATR multiplier for trailing buffer"
+    )
+    trail_min_step_pips: PositiveFloat = Field(
+        default=5.0, description="Minimum step to move trailing stop (pips)"
+    )
+    trail_hysteresis_pips: PositiveFloat = Field(
+        default=2.0, description="Hysteresis threshold to prevent oscillations (pips)"
+    )
+    trail_buffer_pips: PositiveFloat = Field(
+        default=10.0, description="Fixed trailing buffer when not using ATR (pips)"
+    )
+
+    # Break-Even Configuration
+    be_trigger_pips: PositiveFloat = Field(
+        default=10.0, description="Profit threshold to trigger breakeven (pips)"
+    )
+    be_buffer_pips: PositiveFloat = Field(
+        default=2.0, description="Buffer above/below entry for breakeven SL (pips)"
+    )
+
+    # Position Netting Configuration
+    netting_mode: Literal["NETTING", "HEDGING"] = Field(
+        default="NETTING",
+        description="Position netting mode: NETTING reduces opposite positions, HEDGING allows multiple positions",
+    )
+    reduce_rule: Literal["FIFO", "LIFO", "PROPORTIONAL"] = Field(
+        default="FIFO",
+        description="Rule for reducing positions: FIFO (oldest first), LIFO (newest first), PROPORTIONAL (across all)",
     )
 
     # Position sizing
@@ -363,6 +406,19 @@ class RiskSettings(BaseSettings):
             )
         return v
 
+    # Volatility Regime Settings (Prompt-29)
+    regime_timeframe: str = Field(
+        default="H1", description="Timeframe for regime detection (H1, H4, D1)"
+    )
+
+    regime_default: str = Field(
+        default="normal", description="Default regime when detection fails"
+    )
+
+    regime_enabled: bool = Field(
+        default=True, description="Enable volatility regime detection"
+    )
+
     model_config = SettingsConfigDict(env_prefix="RISK_", case_sensitive=False)
 
 
@@ -511,6 +567,22 @@ class ObservabilitySettings(BaseSettings):
         description="Dashboard authentication token (loaded from keyring or default)",
     )
 
+    # JWT Authentication Settings (Prompt-28)
+    dash_jwt_secret: str = Field(
+        default_factory=lambda: get_secret("DASH_JWT_SECRET") or "dev-jwt-secret-2025",
+        description="JWT secret key for dashboard authentication",
+    )
+
+    dash_access_ttl_min: PositiveInt = Field(
+        default=15,
+        description="Access token TTL in minutes",
+    )
+
+    dash_refresh_ttl_days: PositiveInt = Field(
+        default=7,
+        description="Refresh token TTL in days",
+    )
+
     model_config = SettingsConfigDict(env_prefix="METRICS_", case_sensitive=False)
 
 
@@ -522,6 +594,23 @@ class ApplicationSettings(BaseSettings):
         default=Environment.DEVELOPMENT,
         alias="env",
         description="Application environment",
+    )
+
+    # Internationalization and timezone settings
+    LOCALE: str = Field(
+        default="mn",
+        description="Locale for messages and alerts (mn=Mongolian, en=English)",
+    )
+
+    TZ: str = Field(
+        default="Asia/Ulaanbaatar", description="Timezone for logging and user display"
+    )
+
+    # Broker selection
+    broker_kind: BrokerKind = Field(
+        default=BrokerKind.PAPER,
+        alias="BROKER_KIND",
+        description="Broker adapter type: mt5 for MetaTrader 5, paper for simulation",
     )
 
     # Operation mode
@@ -648,6 +737,8 @@ class LegacySettings:
         """Map legacy attribute names to new structure"""
         # Map old names to new structure
         legacy_mapping = {
+            # Broker
+            "BROKER_KIND": lambda: self._settings.broker_kind.value,
             # MT5
             "MT5_TERMINAL_PATH": lambda: self._settings.mt5.terminal_path,
             "MT5_LOGIN": lambda: self._settings.mt5.login,
@@ -664,6 +755,17 @@ class LegacySettings:
             "MIN_ATR": lambda: self._settings.trading.min_atr,
             "SL_MULT": lambda: self._settings.trading.stop_loss_multiplier,
             "TP_MULT": lambda: self._settings.trading.take_profit_multiplier,
+            # Trailing
+            "TRAIL_USE_ATR": lambda: self._settings.trading.trail_use_atr,
+            "TRAIL_ATR_MULT": lambda: self._settings.trading.trail_atr_mult,
+            "TRAIL_MIN_STEP_PIPS": lambda: self._settings.trading.trail_min_step_pips,
+            "TRAIL_HYSTERESIS_PIPS": lambda: self._settings.trading.trail_hysteresis_pips,
+            "TRAIL_BUFFER_PIPS": lambda: self._settings.trading.trail_buffer_pips,
+            "BE_TRIGGER_PIPS": lambda: self._settings.trading.be_trigger_pips,
+            "BE_BUFFER_PIPS": lambda: self._settings.trading.be_buffer_pips,
+            # Netting
+            "NETTING_MODE": lambda: self._settings.trading.netting_mode,
+            "REDUCE_RULE": lambda: self._settings.trading.reduce_rule,
             # App
             "DRY_RUN": lambda: self._settings.dry_run,
             "ENVIRONMENT": lambda: self._settings.environment.value,
@@ -689,6 +791,13 @@ class LegacySettings:
             "DASH_PORT": lambda: self._settings.observability.dash_port,
             "DASH_HOST": lambda: self._settings.observability.dash_host,
             "DASH_TOKEN": lambda: self._settings.observability.dash_token,
+            # JWT Authentication (Prompt-28)
+            "DASH_JWT_SECRET": lambda: self._settings.observability.dash_jwt_secret,
+            "DASH_ACCESS_TTL_MIN": lambda: self._settings.observability.dash_access_ttl_min,
+            "DASH_REFRESH_TTL_DAYS": lambda: self._settings.observability.dash_refresh_ttl_days,
+            # Localization and timezone
+            "LOCALE": lambda: self._settings.LOCALE,
+            "TZ": lambda: self._settings.TZ,
             # Other
             "USD_PER_LOT_PER_USD_MOVE": lambda: self._settings.trading.usd_per_lot_per_usd_move,
         }
