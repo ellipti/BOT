@@ -12,6 +12,8 @@ import time
 from contextlib import contextmanager
 from typing import Optional
 
+from utils.i18n import t  # Монгол хэлний орчуулгын систем
+
 logger = logging.getLogger(__name__)
 
 # SQLite schema for order and fill tracking
@@ -121,7 +123,8 @@ class OrderBook:
         # Initialize database
         self._init_database()
 
-        logger.info(f"OrderBook initialized with database: {db_path}")
+        # OrderBook өгөгдлийн сантай эхлүүлэв
+        logger.info(t("orderbook_initialized", db_path=db_path))
 
     def _init_database(self):
         """Initialize database schema"""
@@ -174,7 +177,10 @@ class OrderBook:
                 )
                 conn.commit()
 
-            logger.debug(f"Created pending order: {coid} {side} {qty} {symbol}")
+            # Хүлээгдэж буй захиалга үүсгэв
+            logger.debug(
+                t("order_created_pending", coid=coid, side=side, qty=qty, symbol=symbol)
+            )
 
     def upsert_on_accept(
         self,
@@ -227,7 +233,10 @@ class OrderBook:
                 )
                 conn.commit()
 
-            logger.debug(f"Order accepted: {coid} → {broker_id} status={status}")
+            # Захиалга хүлээн авагдсан
+            logger.debug(
+                t("order_accepted", coid=coid, broker_id=broker_id, status=status)
+            )
 
     def mark_partial(self, coid: str, fill_qty: float, price: float) -> OrderInfo:
         """
@@ -341,9 +350,11 @@ class OrderBook:
                 )
 
                 if result.rowcount == 0:
-                    logger.warning(f"Cancel failed: Order not found: {coid}")
+                    # Захиалга цуцлах амжилтгүй
+                    logger.warning(t("order_cancel_failed", coid=coid))
                 else:
-                    logger.info(f"Order cancelled: {coid}")
+                    # Захиалга цуцлагдлаа
+                    logger.info(t("order_cancelled", coid=coid))
 
                 conn.commit()
 
@@ -392,7 +403,8 @@ class OrderBook:
                     logger.info(f"Stops updated: {coid} SL={sl} TP={tp}")
                     return True
                 else:
-                    logger.warning(f"Stop update failed: Order not found: {coid}")
+                    # Stop шинэчлэх амжилтгүй
+                    logger.warning(t("order_stop_update_failed", coid=coid))
                     return False
 
     def get_order(self, coid: str) -> OrderInfo | None:

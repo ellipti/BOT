@@ -17,7 +17,7 @@ from .profile import (
 
 __all__ = [
     "AssetType",
-    "SessionType", 
+    "SessionType",
     "SymbolProfile",
     "SymbolProfileManager",
     "get_profile_manager",

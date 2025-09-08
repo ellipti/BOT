@@ -7,6 +7,7 @@ Includes ATR-based dynamic trailing with hysteresis to reduce unnecessary adjust
 import logging
 import time
 from typing import Any, Optional
+
 import pandas as pd
 
 from strategies.indicators import atr
@@ -99,7 +100,7 @@ class TrailingStopManager:
         use_atr: bool = False,
         atr_multiplier: float = 1.5,
         hysteresis_pips: float = 2.0,
-        recent_candles: Optional[pd.DataFrame] = None,
+        recent_candles: pd.DataFrame | None = None,
     ) -> float | None:
         """
         Compute trailing stop loss with ATR-based dynamic trailing and hysteresis.
@@ -136,21 +137,29 @@ class TrailingStopManager:
             if use_atr and recent_candles is not None:
                 # Use ATR-based dynamic trailing buffer
                 try:
-                    atr_period = self.settings.trading.atr_period if self.settings else 14
+                    atr_period = (
+                        self.settings.trading.atr_period if self.settings else 14
+                    )
                     current_atr = atr(recent_candles, period=atr_period)
-                    
+
                     if pd.isna(current_atr) or current_atr is None or current_atr <= 0:
-                        logger.warning(f"Invalid ATR value {current_atr} for {symbol}, falling back to fixed buffer")
+                        logger.warning(
+                            f"Invalid ATR value {current_atr} for {symbol}, falling back to fixed buffer"
+                        )
                         trailing_buffer = trailing_buffer_pips * point
                     else:
                         # Convert ATR to pips then to price units
                         atr_pips = current_atr / point
                         trailing_buffer = (atr_pips * atr_multiplier) * point
-                        
-                        logger.debug(f"ATR trailing for {symbol}: ATR={current_atr:.5f}, "
-                                   f"ATR_pips={atr_pips:.1f}, buffer={trailing_buffer/point:.1f} pips")
+
+                        logger.debug(
+                            f"ATR trailing for {symbol}: ATR={current_atr:.5f}, "
+                            f"ATR_pips={atr_pips:.1f}, buffer={trailing_buffer/point:.1f} pips"
+                        )
                 except Exception as e:
-                    logger.warning(f"ATR calculation failed for {symbol}: {e}, using fixed buffer")
+                    logger.warning(
+                        f"ATR calculation failed for {symbol}: {e}, using fixed buffer"
+                    )
                     trailing_buffer = trailing_buffer_pips * point
             else:
                 # Use fixed pip-based trailing buffer
@@ -171,23 +180,28 @@ class TrailingStopManager:
                     step_met = current_sl is None or (proposed_sl - current_sl) >= (
                         trailing_step_pips * point - 1e-9
                     )
-                    
+
                     # Check hysteresis - avoid rapid oscillations
                     # Compare against last trailing SL or current SL if no trailing history
-                    reference_sl = last_trailing_sl if last_trailing_sl is not None else current_sl
-                    hysteresis_met = (
-                        reference_sl is None or 
-                        abs(proposed_sl - reference_sl) >= (hysteresis_pips * point)
+                    reference_sl = (
+                        last_trailing_sl if last_trailing_sl is not None else current_sl
                     )
-                    
+                    hysteresis_met = reference_sl is None or abs(
+                        proposed_sl - reference_sl
+                    ) >= (hysteresis_pips * point)
+
                     if step_met and hysteresis_met:
-                        logger.debug(f"Trailing SL update for BUY {symbol} ticket {ticket}: "
-                                   f"current_sl={current_sl or 'None'} → proposed_sl={proposed_sl:.5f} "
-                                   f"(buffer={trailing_buffer/point:.1f} pips)")
+                        logger.debug(
+                            f"Trailing SL update for BUY {symbol} ticket {ticket}: "
+                            f"current_sl={current_sl or 'None'} → proposed_sl={proposed_sl:.5f} "
+                            f"(buffer={trailing_buffer/point:.1f} pips)"
+                        )
                         return proposed_sl
                     else:
-                        logger.debug(f"Trailing SL update skipped for {symbol}: "
-                                   f"step_met={step_met}, hysteresis_met={hysteresis_met}")
+                        logger.debug(
+                            f"Trailing SL update skipped for {symbol}: "
+                            f"step_met={step_met}, hysteresis_met={hysteresis_met}"
+                        )
 
             else:  # SELL position
                 # Trail above current price
@@ -199,23 +213,28 @@ class TrailingStopManager:
                     step_met = current_sl is None or (current_sl - proposed_sl) >= (
                         trailing_step_pips * point - 1e-9
                     )
-                    
+
                     # Check hysteresis - avoid rapid oscillations
                     # Compare against last trailing SL or current SL if no trailing history
-                    reference_sl = last_trailing_sl if last_trailing_sl is not None else current_sl
-                    hysteresis_met = (
-                        reference_sl is None or 
-                        abs(proposed_sl - reference_sl) >= (hysteresis_pips * point)
+                    reference_sl = (
+                        last_trailing_sl if last_trailing_sl is not None else current_sl
                     )
-                    
+                    hysteresis_met = reference_sl is None or abs(
+                        proposed_sl - reference_sl
+                    ) >= (hysteresis_pips * point)
+
                     if step_met and hysteresis_met:
-                        logger.debug(f"Trailing SL update for SELL {symbol} ticket {ticket}: "
-                                   f"current_sl={current_sl or 'None'} → proposed_sl={proposed_sl:.5f} "
-                                   f"(buffer={trailing_buffer/point:.1f} pips)")
+                        logger.debug(
+                            f"Trailing SL update for SELL {symbol} ticket {ticket}: "
+                            f"current_sl={current_sl or 'None'} → proposed_sl={proposed_sl:.5f} "
+                            f"(buffer={trailing_buffer/point:.1f} pips)"
+                        )
                         return proposed_sl
                     else:
-                        logger.debug(f"Trailing SL update skipped for {symbol}: "
-                                   f"step_met={step_met}, hysteresis_met={hysteresis_met}")
+                        logger.debug(
+                            f"Trailing SL update skipped for {symbol}: "
+                            f"step_met={step_met}, hysteresis_met={hysteresis_met}"
+                        )
 
             return None
 
@@ -271,7 +290,7 @@ class TrailingStopManager:
         use_atr_trailing: bool = False,
         atr_multiplier: float = 1.5,
         hysteresis_pips: float = 2.0,
-        recent_candles: Optional[pd.DataFrame] = None,
+        recent_candles: pd.DataFrame | None = None,
     ) -> str | None:
         """
         Process trailing logic for a single position with ATR support.

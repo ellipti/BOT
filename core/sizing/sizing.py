@@ -98,11 +98,16 @@ def calc_sl_tp_by_atr(
 
 
 def calc_lot_by_risk(
-    symbol_info, entry: float, sl: float, equity: float, risk_pct: float, symbol: str = None
+    symbol_info,
+    entry: float,
+    sl: float,
+    equity: float,
+    risk_pct: float,
+    symbol: str = None,
 ) -> float:
     """
     Calculate position size in lots based on risk management.
-    
+
     Enhanced with symbol profile support for multi-asset trading.
 
     Formula:
@@ -130,11 +135,11 @@ def calc_lot_by_risk(
     if symbol:
         try:
             from core.symbols import get_profile_manager
-            
+
             profile_manager = get_profile_manager()
             if profile_manager.config.settings.override_sizing:
                 profile_params = profile_manager.get_symbol_info_override(symbol)
-                
+
                 # Create enhanced symbol info with profile data
                 class ProfileSymbolInfo:
                     def __init__(self, profile_data, fallback_info=None):
@@ -145,13 +150,15 @@ def calc_lot_by_risk(
                         self.volume_step = profile_data["volume_step"]
                         self.asset = profile_data["asset"]
                         self.spread_typical = profile_data["spread_typical"]
-                        
+
                         # Store original info for reference
                         self._original_info = fallback_info
-                
+
                 symbol_info = ProfileSymbolInfo(profile_params, symbol_info)
-                logger.debug(f"Using symbol profile for {symbol}: {symbol_info.asset} asset")
-                
+                logger.debug(
+                    f"Using symbol profile for {symbol}: {symbol_info.asset} asset"
+                )
+
         except ImportError:
             logger.debug("Symbol profiles not available, using MT5 info")
         except Exception as e:
@@ -211,9 +218,9 @@ def calc_lot_by_risk(
     final_lots = round_to_step(raw_lots, volume_step, volume_min, volume_max)
 
     # Enhanced logging with asset info
-    asset_info = getattr(symbol_info, 'asset', 'unknown')
-    symbol_ref = symbol if symbol else 'UNKNOWN'
-    
+    asset_info = getattr(symbol_info, "asset", "unknown")
+    symbol_ref = symbol if symbol else "UNKNOWN"
+
     logger.info(
         f"Position sizing [{symbol_ref}:{asset_info}]: equity=${equity:.2f}, "
         f"risk={risk_pct:.1%} (${risk_amount:.2f}), stop_distance={stop_distance_price:.5f} "
@@ -286,17 +293,18 @@ def fetch_atr(symbol: str, timeframe: int, period: int = 14) -> float | None:
 def fetch_candles(symbol: str, timeframe: int, count: int = 100):
     """
     Fetch OHLC candle data from MT5 for regime detection.
-    
+
     Args:
         symbol: Trading symbol (e.g., "XAUUSD")
         timeframe: MT5 timeframe constant
         count: Number of candles to fetch
-        
+
     Returns:
         List[Candle]: List of candle objects or empty list if failed
     """
     try:
         import MetaTrader5 as mt5
+
         from feeds import Candle
     except ImportError as e:
         logger.error(f"MT5 or feeds import failed: {e}")
@@ -309,27 +317,27 @@ def fetch_candles(symbol: str, timeframe: int, count: int = 100):
     try:
         # Fetch raw rates data
         rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count)
-        
+
         if rates is None or len(rates) == 0:
             logger.error(f"No candle data available for {symbol} {timeframe}")
             return []
-        
+
         # Convert to Candle objects
         candles = []
         for rate in rates:
             candle = Candle(
-                ts=int(rate['time']),
-                open=float(rate['open']),
-                high=float(rate['high']),
-                low=float(rate['low']),
-                close=float(rate['close']),
-                volume=float(rate['tick_volume'])  # Use tick_volume as proxy
+                ts=int(rate["time"]),
+                open=float(rate["open"]),
+                high=float(rate["high"]),
+                low=float(rate["low"]),
+                close=float(rate["close"]),
+                volume=float(rate["tick_volume"]),  # Use tick_volume as proxy
             )
             candles.append(candle)
-        
+
         logger.debug(f"Fetched {len(candles)} candles for {symbol}")
         return candles
-        
+
     except Exception as e:
         logger.error(f"Error fetching candles for {symbol}: {e}")
         return []

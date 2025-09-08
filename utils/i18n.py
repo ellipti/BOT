@@ -30,6 +30,7 @@ _MESSAGES_MN: dict[str, str] = {
     "system_startup": "Систем эхэлж байна...",
     "system_ready": "Систем бэлэн",
     "system_shutdown": "Систем унтарч байна",
+    "system_error": "Системийн алдаа: {error}",
     "connection_lost": "Холболт тасарсан: {reason}",
     "connection_restored": "Холболт сэргэсэн",
     # Trading events
@@ -59,6 +60,27 @@ _MESSAGES_MN: dict[str, str] = {
     "restore_completed": "Сэргээлт дууслаа",
     "dr_drill_started": "DR дасгал эхэллээ: {drill_id}",
     "dr_drill_completed": "DR дасгал дууслаа: {status}",
+    # Regime detection system / Дэглэмийн тогтоолт
+    "regime_detector_init": "RegimeDetector эхэллээ: идэвхтэй={active}, босго={thresholds}",
+    "regime_config_not_found": "Дэглэмийн тохиргоо олдсонгүй: {path}, анхдагч утгуудыг ашиглана",
+    "regime_config_load_error": "Дэглэмийн тохиргоо ачаалахад алдаа: {error}, анхдагч утгуудыг ашиглана",
+    "regime_candles_insufficient": "ATR тооцоход ханш дутагдалтай: {count} < {required}",
+    "regime_detection": "Дэглэм тогтоох [{symbol}]: norm_ATR={norm_atr:.6f}, ret_vol={ret_vol:.6f}, түүхий={raw_regime}, тогтвортой={stable_regime}",
+    "regime_detection_disabled": "Дэглэм тогтоох идэвхгүй, анхдагч дэглэм ашиглана",
+    "regime_candles_insufficient_warn": "Дэглэм тогтооход ханш дутагдалтай: {count}",
+    "regime_detection_failed": "Дэглэм тогтоох алдаатай {symbol}: {error}",
+    "regime_atr_invalid_price": "Буруу одоогийн үнэ: {price}",
+    "regime_atr_error": "Нормчлагдсан ATR тооцох алдаа: {error}",
+    "regime_return_vol_error": "Буцаагийн хэлбэлзэл тооцох алдаа: {error}",
+    "regime_stability": "Дэглэмийн тогтвортой байдал: {current} хадгалах (тууштай={consistency:.2f} < {threshold})",
+    "regime_unknown": "Үл мэдэгдэх дэглэм: {regime}, анхдагч дэглэм ашиглана",
+    # Order lifecycle management / Захиалгын амьдралын мөчлөг
+    "orderbook_initialized": "OrderBook өгөгдлийн сантай эхэллээ: {db_path}",
+    "order_created_pending": "Хүлээгдэж буй захиалга үүсгэв: {coid} {side} {qty} {symbol}",
+    "order_accepted": "Захиалга хүлээн авагдсан: {coid} → {broker_id} статус={status}",
+    "order_cancel_requested": "Захиалга цуцлах хүсэлт илгээгдсэн: {coid}",
+    "order_cancel_failed": "Захиалга цуцлах амжилтгүй: Захиалга олдсонгүй: {coid}",
+    "order_stop_update_failed": "Stop шинэчлэх амжилтгүй: Захиалга олдсонгүй: {coid}",
 }
 
 

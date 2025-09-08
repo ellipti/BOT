@@ -17,6 +17,8 @@ except ImportError:
 
 from config.settings import get_settings
 from logging_setup import setup_advanced_logger
+from utils.i18n import t  # Монгол хэлний дэмжлэг
+from utils.timez import now_str  # УБ цагийн дэмжлэг
 
 logger = setup_advanced_logger(__name__)
 
@@ -31,7 +33,10 @@ class RiskAlertManager:
 
         if not TELEGRAM_AVAILABLE:
             logger.warning(
-                "python-telegram-bot суугаагүй байна - Telegram alert ажиллахгүй"
+                t(
+                    "system_error",
+                    message="python-telegram-bot суугаагүй байна - Telegram alert ажиллахгүй",
+                )
             )
             return
 
@@ -40,7 +45,9 @@ class RiskAlertManager:
     def _initialize_bot(self):
         """Telegram bot эхлүүлэх"""
         if not self.settings.telegram.bot_token:
-            logger.info("Telegram bot token байхгүй - alert систем идэвхгүй")
+            logger.info(
+                t("system_startup")
+            )  # Telegram bot token байхгүй - alert систем идэвхгүй
             return
 
         try:
@@ -58,11 +65,13 @@ class RiskAlertManager:
 
             if self.chat_ids:
                 logger.info(
-                    "Risk alert Telegram bot бэлэн боллоо",
+                    t("system_ready"),  # Risk alert Telegram bot бэлэн боллоо
                     extra={"chat_count": len(self.chat_ids)},
                 )
             else:
-                logger.warning("Chat ID байхгүй - Telegram alert идэвхгүй")
+                logger.warning(
+                    t("connection_lost", reason="Chat ID байхгүй")
+                )  # Chat ID байхгүй - Telegram alert идэвхгүй
                 self.bot = None
 
         except Exception as e:
@@ -87,7 +96,8 @@ class RiskAlertManager:
         }
 
         emoji = emoji_map.get(level, "ℹ️")
-        formatted_message = f"{emoji} **ЭРСДЭЛИЙН ЗАСАГЛАЛ**\n\n{message}\n\n⏰ {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}"
+        # УБ цагийн форматаар timestamp нэмэх
+        formatted_message = f"{emoji} **{t('risk_block', reason='ЭРСДЭЛИЙН ЗАСАГЛАЛ')}**\n\n{message}\n\n⏰ {now_str(self.settings)}"
 
         success_count = 0
 

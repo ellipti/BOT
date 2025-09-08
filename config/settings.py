@@ -171,10 +171,10 @@ class TradingSettings(BaseSettings):
         default=1.5, description="ATR multiplier for trailing buffer"
     )
     trail_min_step_pips: PositiveFloat = Field(
-        default=5.0, description="Minimum step to move trailing stop (pips)"
+        default=8.0, description="Minimum step to move trailing stop (pips)"
     )
     trail_hysteresis_pips: PositiveFloat = Field(
-        default=2.0, description="Hysteresis threshold to prevent oscillations (pips)"
+        default=4.0, description="Hysteresis threshold to prevent oscillations (pips)"
     )
     trail_buffer_pips: PositiveFloat = Field(
         default=10.0, description="Fixed trailing buffer when not using ATR (pips)"

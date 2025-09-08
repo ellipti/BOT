@@ -10,7 +10,7 @@ Features:
 
 Provides web interface for:
 - System health monitoring
-- Order book visualization  
+- Order book visualization
 - Metrics and KPIs
 - Chart visualization
 - User management (admin only)
@@ -20,15 +20,22 @@ import logging
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status, Form
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from config.settings import get_settings
 from dashboard.auth import (
-    create_access_token, create_refresh_token, decode_token, check_rate_limit,
-    log_audit_event, require_viewer, require_trader, require_admin, optional_user
+    check_rate_limit,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    log_audit_event,
+    optional_user,
+    require_admin,
+    require_trader,
+    require_viewer,
 )
 from dashboard.deps import DashboardDataProvider, get_dashboard_provider
 from dashboard.users import get_user_store
@@ -48,24 +55,26 @@ app = FastAPI(
 templates = Jinja2Templates(directory="dashboard/templates")
 app.mount("/static", StaticFiles(directory="dashboard/static"), name="static")
 
+
 # Store JWT secret in app state for dependency injection
 @app.on_event("startup")
 async def startup_event():
     settings = get_settings()
     app.state.jwt_secret = settings.observability.dash_jwt_secret
-    
+
     # Add template filters
     def timestamp_to_date(timestamp):
         if timestamp:
             return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M")
         return "Never"
-    
-    templates.env.filters['timestamp_to_date'] = timestamp_to_date
+
+    templates.env.filters["timestamp_to_date"] = timestamp_to_date
 
 
 # ================================
 # Route Protection and Redirects
 # ================================
+
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
@@ -73,16 +82,18 @@ async def auth_middleware(request: Request, call_next):
     # Public routes that don't require authentication
     public_paths = ["/login", "/healthz", "/status", "/docs", "/redoc", "/openapi.json"]
     legacy_paths = ["/legacy/"]
-    
+
     # Check if this is a public route
-    if (request.url.path in public_paths or 
-        any(request.url.path.startswith(path) for path in legacy_paths) or
-        request.url.path.startswith("/static/")):
+    if (
+        request.url.path in public_paths
+        or any(request.url.path.startswith(path) for path in legacy_paths)
+        or request.url.path.startswith("/static/")
+    ):
         return await call_next(request)
-    
+
     # For all other routes, check authentication
     access_token = request.cookies.get("access")
-    
+
     if not access_token:
         # Redirect to login for browser requests
         if "text/html" in request.headers.get("accept", ""):
@@ -91,24 +102,23 @@ async def auth_middleware(request: Request, call_next):
             # Return 401 for API requests
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"detail": "Authentication required"}
+                content={"detail": "Authentication required"},
             )
-    
+
     # Proceed with the request
     return await call_next(request)
-
 
 
 # ================================
 # Authentication Routes (Prompt-28)
 # ================================
 
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """Login page"""
     return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "title": "Login"}
+        "login.html", {"request": request, "title": "Login"}
     )
 
 
@@ -121,54 +131,59 @@ async def login(
 ):
     """Login endpoint - authenticate user and set JWT cookies"""
     client_ip = request.client.host
-    
+
     # Rate limiting check
     if not check_rate_limit(f"login:{client_ip}", max_attempts=5, window_minutes=15):
-        log_audit_event("login_rate_limited", details={"ip": client_ip, "email": email}, success=False)
+        log_audit_event(
+            "login_rate_limited",
+            details={"ip": client_ip, "email": email},
+            success=False,
+        )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many login attempts. Please try again later."
+            detail="Too many login attempts. Please try again later.",
         )
-    
+
     # Authenticate user
     user_store = get_user_store()
     user = user_store.authenticate_user(email, password)
-    
+
     if not user:
         # Still count this against rate limit
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password"
         )
-    
+
     # Create tokens
     access_token = create_access_token(user["id"], user["roles"])
     refresh_token = create_refresh_token(user["id"])
-    
+
     # Set secure cookies
     settings = get_settings()
     is_secure = settings.environment != "development"
-    
+
     response.set_cookie(
         key="access",
         value=access_token,
         httponly=True,
         secure=is_secure,
         samesite="strict",
-        max_age=settings.observability.dash_access_ttl_min * 60
+        max_age=settings.observability.dash_access_ttl_min * 60,
     )
-    
+
     response.set_cookie(
         key="refresh",
         value=refresh_token,
         httponly=True,
         secure=is_secure,
         samesite="strict",
-        max_age=settings.observability.dash_refresh_ttl_days * 24 * 60 * 60
+        max_age=settings.observability.dash_refresh_ttl_days * 24 * 60 * 60,
     )
-    
-    log_audit_event("login_success", user_id=user["id"], details={"email": email, "ip": client_ip})
-    
+
+    log_audit_event(
+        "login_success", user_id=user["id"], details={"email": email, "ip": client_ip}
+    )
+
     return {"status": "success", "message": "Login successful", "redirect": "/"}
 
 
@@ -176,77 +191,72 @@ async def login(
 async def refresh_token_endpoint(request: Request, response: Response):
     """Refresh access token using refresh token"""
     refresh_token = request.cookies.get("refresh")
-    
+
     if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token required"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token required"
         )
-    
+
     try:
         # Decode refresh token
         payload = decode_token(refresh_token)
-        
+
         if payload.get("type") != "refresh":
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type"
             )
-        
+
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token payload"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload"
             )
-        
+
         # Get user to verify still active and get current roles
         user_store = get_user_store()
         user = user_store.get_user_by_id(user_id)
-        
+
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
             )
-        
+
         # Create new tokens (token rotation)
         new_access_token = create_access_token(user_id, user["roles"])
         new_refresh_token = create_refresh_token(user_id)
-        
+
         # Set new cookies
         settings = get_settings()
         is_secure = settings.environment != "development"
-        
+
         response.set_cookie(
             key="access",
             value=new_access_token,
             httponly=True,
             secure=is_secure,
             samesite="strict",
-            max_age=settings.observability.dash_access_ttl_min * 60
+            max_age=settings.observability.dash_access_ttl_min * 60,
         )
-        
+
         response.set_cookie(
             key="refresh",
             value=new_refresh_token,
             httponly=True,
             secure=is_secure,
             samesite="strict",
-            max_age=settings.observability.dash_refresh_ttl_days * 24 * 60 * 60
+            max_age=settings.observability.dash_refresh_ttl_days * 24 * 60 * 60,
         )
-        
+
         log_audit_event("token_refresh", user_id=user_id)
-        
+
         return {"status": "success", "message": "Token refreshed"}
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Token refresh error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token refresh failed"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token refresh failed"
         )
 
 
@@ -256,14 +266,18 @@ async def logout(request: Request, response: Response):
     # Get user info for audit log
     user_info = await optional_user(request)
     user_id = user_info[0] if user_info else None
-    
+
     # Clear cookies
     response.delete_cookie(key="access", httponly=True, samesite="strict")
     response.delete_cookie(key="refresh", httponly=True, samesite="strict")
-    
+
     log_audit_event("logout", user_id=user_id)
-    
-    return {"status": "success", "message": "Logged out successfully", "redirect": "/login"}
+
+    return {
+        "status": "success",
+        "message": "Logged out successfully",
+        "redirect": "/login",
+    }
 
 
 # ================================
@@ -274,12 +288,12 @@ async def logout(request: Request, response: Response):
 @app.get("/", response_class=HTMLResponse)
 async def dashboard_overview(
     request: Request,
-    user_info = Depends(require_viewer),
+    user_info=Depends(require_viewer),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
     """Main dashboard overview page (requires viewer role)"""
     user_id, user_roles = user_info
-    
+
     try:
         # Gather all dashboard data
         health_status = provider.get_health_status()
@@ -319,12 +333,12 @@ async def dashboard_overview(
 async def orders_page(
     request: Request,
     status_filter: str | None = None,
-    user_info = Depends(require_trader),
+    user_info=Depends(require_trader),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
     """Orders management page (requires trader role)"""
     user_id, user_roles = user_info
-    
+
     try:
         orders = provider.get_orders_by_status(status_filter)
         status_counts = provider.get_orders_summary().get("status_counts", {})
@@ -353,11 +367,11 @@ async def orders_page(
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_page(
     request: Request,
-    user_info = Depends(require_admin),
+    user_info=Depends(require_admin),
 ):
     """Admin page (requires admin role)"""
     user_id, user_roles = user_info
-    
+
     try:
         user_store = get_user_store()
         users = user_store.list_users()
@@ -386,12 +400,12 @@ async def charts_page(
     symbol: str,
     request: Request,
     limit: int = 100,
-    user_info = Depends(require_viewer),
+    user_info=Depends(require_viewer),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
     """Chart visualization page for symbol (requires viewer role)"""
     user_id, user_roles = user_info
-    
+
     try:
         chart_data = provider.get_chart_data(symbol.upper(), limit)
 
@@ -418,9 +432,10 @@ async def charts_page(
 # API Endpoints for HTMX and JSON responses
 # ================================
 
+
 @app.get("/api/health")
 async def api_health(
-    user_info = Depends(require_viewer),
+    user_info=Depends(require_viewer),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
     """API endpoint for health status (requires viewer role)"""
@@ -430,7 +445,7 @@ async def api_health(
 @app.get("/api/orders")
 async def api_orders(
     status_filter: str | None = None,
-    user_info = Depends(require_trader),
+    user_info=Depends(require_trader),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
     """API endpoint for orders data (requires trader role)"""
@@ -442,7 +457,7 @@ async def api_orders(
 
 @app.get("/api/metrics")
 async def api_metrics(
-    user_info = Depends(require_viewer),
+    user_info=Depends(require_viewer),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
     """API endpoint for metrics data (requires viewer role)"""
@@ -453,7 +468,7 @@ async def api_metrics(
 async def api_chart_data(
     symbol: str,
     limit: int = 100,
-    user_info = Depends(require_viewer),
+    user_info=Depends(require_viewer),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
     """API endpoint for chart data (requires viewer role)"""
@@ -462,28 +477,26 @@ async def api_chart_data(
 
 @app.get("/api/admin/users")
 async def api_admin_users(
-    user_info = Depends(require_admin),
+    user_info=Depends(require_admin),
 ):
     """API endpoint for user management (requires admin role)"""
     user_store = get_user_store()
-    return {
-        "users": user_store.list_users(),
-        "stats": user_store.get_stats()
-    }
+    return {"users": user_store.list_users(), "stats": user_store.get_stats()}
 
 
 # ================================
 # Legacy token support (X-DASH-TOKEN header)
 # ================================
 
+
 async def verify_legacy_token(request: Request) -> bool:
     """Legacy authentication for backward compatibility"""
     settings = get_settings()
     token = request.headers.get("X-DASH-TOKEN")
-    
+
     if token == settings.observability.dash_token:
         return True
-    
+
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or missing X-DASH-TOKEN",

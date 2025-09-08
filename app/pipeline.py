@@ -10,6 +10,7 @@ import time
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
+from audit.audit_logger import audit_fill, audit_order
 from core.broker import BrokerGateway, OrderRequest, OrderType, Side
 from core.events import (
     EventBus,
@@ -36,7 +37,7 @@ from core.sizing.sizing import (
 )
 from observability.metrics import inc, observe, set_gauge
 from risk.governor_v2 import RiskGovernorV2
-from audit.audit_logger import audit_order, audit_fill
+from utils.i18n import t  # Монгол хэлний дэмжлэг
 
 if TYPE_CHECKING:
     from config.settings import ApplicationSettings
@@ -320,7 +321,7 @@ class TradingPipeline:
             side=event.side,
             quantity=event.quantity,
             price=event.price,
-            order_id=client_order_id
+            order_id=client_order_id,
         )
 
         # Track order placement
@@ -328,7 +329,12 @@ class TradingPipeline:
         set_gauge("current_orders_processing", 1)
 
         logger.info(
-            f"📤 Order placement received: {client_order_id} {event.symbol} {event.side}"
+            t(
+                "order_placed",
+                symbol=event.symbol,
+                side=event.side,
+                qty=str(event.quantity),
+            )
         )
 
         # Convert OrderPlaced to OrderRequest
@@ -433,9 +439,12 @@ class TradingPipeline:
                         self.bus.publish(filled_event)
 
                         logger.info(
-                            f"✅ Order filled: {client_order_id} -> deal #{deal_ticket} "
-                            f"@ ${fill_price:.5f}, reconciliation={reconciliation_latency:.3f}s, "
-                            f"total={total_latency:.3f}s"
+                            t(
+                                "order_filled",
+                                symbol=event.symbol,
+                                filled_qty=str(event.quantity),
+                                price=f"${fill_price:.5f}",
+                            )
                         )
 
                     else:
@@ -444,13 +453,15 @@ class TradingPipeline:
 
                         # Reconciliation timeout - order may still be pending
                         logger.warning(
-                            f"⏱️ Reconciliation timeout for {client_order_id} after "
-                            f"{reconciliation_latency:.3f}s - emitting Rejected"
+                            t(
+                                "connection_lost",
+                                reason=f"Reconciliation timeout {reconciliation_latency:.3f}s",
+                            )
                         )
 
                         rejected = Rejected(
                             client_order_id=client_order_id,
-                            reason=f"RECONCILIATION_TIMEOUT after {reconciliation_latency:.3f}s",
+                            reason=t("order_cancelled", coid=client_order_id),
                         )
                         self.bus.publish(rejected)
 

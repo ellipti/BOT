@@ -1,17 +1,40 @@
 {% extends "base.html" %} {% block content %}
-<!-- Order Status Filter -->
+<!-- Order Filters -->
 <div class="card" style="margin-bottom: 1.5rem">
   <div class="card-body">
+    <!-- Date Range Filter -->
+    <div
+      style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem"
+    >
+      <strong>Time Range:</strong>
+      <a
+        href="/orders?days=1{% if current_filter %}&status_filter={{ current_filter }}{% endif %}"
+        class="btn btn-sm {% if days_filter == 1 %}btn-active{% endif %}"
+        >Last 24h</a
+      >
+      <a
+        href="/orders?days=7{% if current_filter %}&status_filter={{ current_filter }}{% endif %}"
+        class="btn btn-sm {% if days_filter == 7 %}btn-active{% endif %}"
+        >Last 7 days</a
+      >
+      <a
+        href="/orders?days=30{% if current_filter %}&status_filter={{ current_filter }}{% endif %}"
+        class="btn btn-sm {% if days_filter == 30 %}btn-active{% endif %}"
+        >Last 30 days</a
+      >
+    </div>
+
+    <!-- Status Filter -->
     <div style="display: flex; gap: 1rem; align-items: center">
       <strong>Filter by Status:</strong>
       <a
-        href="/orders"
+        href="/orders?days={{ days_filter }}"
         class="btn {% if not current_filter %}btn-active{% endif %}"
         >All</a
       >
       {% for status, count in status_counts.items() %}
       <a
-        href="/orders?status_filter={{ status }}"
+        href="/orders?days={{ days_filter }}&status_filter={{ status }}"
         class="btn btn-sm {% if current_filter == status %}btn-active{% endif %}"
         style="background: {% if status == 'FILLED' %}#38a169{% elif status == 'PENDING' %}#3182ce{% elif status == 'CANCELLED' %}#d69e2e{% else %}#e53e3e{% endif %};"
       >

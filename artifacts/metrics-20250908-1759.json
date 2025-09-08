@@ -1,0 +1,128 @@
+{
+  "metadata": {
+    "generated_by": "snapshot_metrics.py",
+    "purpose": "i18n system metrics collection",
+    "locale": "mn (Mongolian)",
+    "timezone": "Asia/Ulaanbaatar",
+    "description": "Монгол хэлний i18n системийн snapshot метрик"
+  },
+  "i18n_metrics": {
+    "translation_system": {
+      "total_translations": 61,
+      "categories": {
+        "General": 27,
+        "Monitoring": 2,
+        "Risk Management": 16,
+        "Order Lifecycle": 7,
+        "Authentication": 3,
+        "System Status": 4,
+        "Data Feed": 2
+      },
+      "sample_translations": {
+        "system_startup": "Систем эхэлж байна...",
+        "order_placed": "Захиалга илгээгдлээ: TEST BUY 1.0",
+        "risk_block": "Эрсдэлийн хориг: Sample alert",
+        "auth_login_ok": "Нэвтрэлт амжилттай"
+      }
+    },
+    "integration_status": {
+      "risk_telegram_alerts": "✅ Integrated",
+      "regime_detection": "✅ Integrated",
+      "trading_pipeline": "✅ Integrated",
+      "dashboard_auth": "✅ Integrated",
+      "order_lifecycle": "✅ Integrated"
+    },
+    "configuration": {
+      "locale": "mn",
+      "timezone": "Asia/Ulaanbaatar",
+      "environment": "unknown"
+    }
+  },
+  "system_metrics": {
+    "collection_info": {
+      "timestamp_utc": "2025-09-08T17:59:35.923982",
+      "timestamp_local": "2025-09-08 17:59:35 +08",
+      "timezone_info": "Asia/Ulaanbaatar",
+      "collection_script": "snapshot_metrics.py",
+      "version": "1.0.0"
+    },
+    "system_health": {
+      "i18n_system": "operational",
+      "translation_errors": 0,
+      "fallback_usage": "minimal",
+      "mongolian_character_support": "full"
+    }
+  },
+  "translation_tests": {
+    "test_summary": {
+      "passed": 9,
+      "total": 9,
+      "success_rate": "100.0%"
+    },
+    "test_details": [
+      {
+        "key": "system_startup",
+        "message": "Систем эхэлж байна...",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      },
+      {
+        "key": "system_shutdown",
+        "message": "Систем унтарч байна",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      },
+      {
+        "key": "risk_block",
+        "message": "Эрсдэлийн хориг: Test reason",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      },
+      {
+        "key": "order_placed",
+        "message": "Захиалга илгээгдлээ: TEST BUY 1.0",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      },
+      {
+        "key": "order_filled",
+        "message": "Захиалга биелэв: TEST 1.0 @ 1.0",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      },
+      {
+        "key": "auth_login_ok",
+        "message": "Нэвтрэлт амжилттай",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      },
+      {
+        "key": "auth_login_fail",
+        "message": "Нэвтрэлт амжилтгүй: буруу эрхийн мэдээлэл",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      },
+      {
+        "key": "regime_detector_init",
+        "message": "RegimeDetector эхэллээ: идэвхтэй=True, босго={'test': 'value'}",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      },
+      {
+        "key": "orderbook_initialized",
+        "message": "OrderBook өгөгдлийн сантай эхэллээ: /test/path",
+        "is_translated": true,
+        "has_mongolian_chars": true,
+        "status": "✅"
+      }
+    ]
+  }
+}

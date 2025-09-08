@@ -3,12 +3,13 @@ Tests for Symbol Profile System (Prompt-30)
 Validates multi-asset symbol profiles, session guards, and sizing overrides
 """
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
-from core.symbols import SymbolProfileManager
+import pytest
+
 from core.sizing.sizing import calc_lot_by_risk
+from core.symbols import SymbolProfileManager
 
 
 class TestSymbolProfileManager:
@@ -23,7 +24,7 @@ class TestSymbolProfileManager:
         """Test that symbol profiles load correctly."""
         assert manager.profiles is not None
         assert len(manager.profiles) > 0
-        
+
         # Test specific symbols exist
         assert "EURUSD" in manager.profiles
         assert "XAUUSD" in manager.profiles
@@ -33,10 +34,12 @@ class TestSymbolProfileManager:
     def test_get_profile_valid_symbol(self, manager):
         """Test getting profile for valid symbol."""
         profile = manager.get_profile("EURUSD")
-        
+
         assert profile is not None
         assert profile.asset == "forex"
-        assert profile.tick_size == 0.0001  # EURUSD has 4 decimal places (1 pip = 0.0001)
+        assert (
+            profile.tick_size == 0.0001
+        )  # EURUSD has 4 decimal places (1 pip = 0.0001)
         assert profile.tick_value == 10.0
 
     def test_get_profile_invalid_symbol(self, manager):
@@ -47,13 +50,13 @@ class TestSymbolProfileManager:
     def test_session_validation_forex(self, manager):
         """Test session validation for forex (24x5)."""
         # Monday 10:00 UTC - should be open for 24x5 forex session
-        monday_10 = datetime(2024, 1, 8, 10, 0, tzinfo=timezone.utc)
+        monday_10 = datetime(2024, 1, 8, 10, 0, tzinfo=UTC)
         can_trade, reason = manager.can_trade("EURUSD", monday_10)
         assert can_trade
         assert "market is open" in reason.lower() or "ok" in reason.lower()
 
         # Saturday 10:00 UTC - should be closed for 24x5 forex session
-        saturday_10 = datetime(2024, 1, 6, 10, 0, tzinfo=timezone.utc)
+        saturday_10 = datetime(2024, 1, 6, 10, 0, tzinfo=UTC)
         can_trade, reason = manager.can_trade("EURUSD", saturday_10)
         assert not can_trade
         assert "market is closed" in reason.lower() or "closed" in reason.lower()
@@ -61,7 +64,7 @@ class TestSymbolProfileManager:
     def test_session_validation_crypto(self, manager):
         """Test session validation for crypto (24x7)."""
         # Saturday 10:00 UTC - should be open for crypto
-        saturday_10 = datetime(2024, 1, 6, 10, 0, tzinfo=timezone.utc)
+        saturday_10 = datetime(2024, 1, 6, 10, 0, tzinfo=UTC)
         can_trade, reason = manager.can_trade("BTCUSD", saturday_10)
         assert can_trade
         assert "market is open" in reason
@@ -69,7 +72,7 @@ class TestSymbolProfileManager:
     def test_session_validation_with_holidays(self, manager):
         """Test session validation respects holidays."""
         # New Year's Day 2024 (Monday) - should be closed for US indices
-        new_years = datetime(2024, 1, 1, 15, 0, tzinfo=timezone.utc)
+        new_years = datetime(2024, 1, 1, 15, 0, tzinfo=UTC)
         can_trade, reason = manager.can_trade("US500", new_years)
         assert not can_trade
         assert "holiday" in reason.lower()
@@ -78,12 +81,12 @@ class TestSymbolProfileManager:
         """Test RTH (Regular Trading Hours) session validation."""
         # US500 should have RTH restrictions
         # 14:30 UTC = 9:30 EST (market open) - should be open
-        market_open = datetime(2024, 1, 8, 14, 30, tzinfo=timezone.utc)
+        market_open = datetime(2024, 1, 8, 14, 30, tzinfo=UTC)
         can_trade, reason = manager.can_trade("US500", market_open)
         # Note: This depends on the exact RTH configuration and timezone handling
-        
+
         # 06:00 UTC = 1:00 EST (pre-market) - should be closed for RTH
-        pre_market = datetime(2024, 1, 8, 6, 0, tzinfo=timezone.utc)
+        pre_market = datetime(2024, 1, 8, 6, 0, tzinfo=UTC)
         can_trade, reason = manager.can_trade("US500", pre_market)
         # RTH session should be closed at this time
 
@@ -122,12 +125,7 @@ class TestPositionSizingWithProfiles:
         risk_pct = 0.02
 
         lots = calc_lot_by_risk(
-            mock_symbol_info,
-            current_price,
-            sl_price,
-            equity,
-            risk_pct,
-            symbol="EURUSD"
+            mock_symbol_info, current_price, sl_price, equity, risk_pct, symbol="EURUSD"
         )
 
         assert lots > 0
@@ -146,7 +144,7 @@ class TestPositionSizingWithProfiles:
             sl_price,
             equity,
             risk_pct,
-            symbol="UNKNOWN"
+            symbol="UNKNOWN",
         )
 
         assert lots > 0
@@ -185,36 +183,36 @@ class TestSessionDefinitions:
         """Test 24x5 session is open Monday-Friday."""
         manager = SymbolProfileManager()
         profile = manager.get_profile("EURUSD")
-        
+
         # Monday should be open
-        monday = datetime(2024, 1, 8, 10, 0, tzinfo=timezone.utc)
+        monday = datetime(2024, 1, 8, 10, 0, tzinfo=UTC)
         assert profile.session.is_open(monday)
-        
+
         # Saturday should be closed
-        saturday = datetime(2024, 1, 6, 10, 0, tzinfo=timezone.utc)
+        saturday = datetime(2024, 1, 6, 10, 0, tzinfo=UTC)
         assert not profile.session.is_open(saturday)
 
     def test_24x7_session(self):
         """Test 24x7 session is always open."""
         manager = SymbolProfileManager()
         profile = manager.get_profile("BTCUSD")
-        
+
         # Any day should be open
-        saturday = datetime(2024, 1, 6, 10, 0, tzinfo=timezone.utc)
+        saturday = datetime(2024, 1, 6, 10, 0, tzinfo=UTC)
         assert profile.session.is_open(saturday)
-        
-        sunday = datetime(2024, 1, 7, 10, 0, tzinfo=timezone.utc)
+
+        sunday = datetime(2024, 1, 7, 10, 0, tzinfo=UTC)
         assert profile.session.is_open(sunday)
 
     def test_holiday_checking(self):
         """Test holiday checking works correctly."""
         manager = SymbolProfileManager()
-        
+
         # Test US holidays for US500
         profile = manager.get_profile("US500")
         if profile and profile.holidays:
             # New Year's Day 2024
-            new_years = datetime(2024, 1, 1, 15, 0, tzinfo=timezone.utc)
+            new_years = datetime(2024, 1, 1, 15, 0, tzinfo=UTC)
             assert not profile.session.is_open(new_years, holidays=profile.holidays)
 
 
@@ -222,12 +220,13 @@ class TestSessionDefinitions:
 class TestPipelineIntegration:
     """Integration tests for pipeline with symbol profiles."""
 
-    @patch('app.pipeline.SymbolProfileManager')
+    @patch("app.pipeline.SymbolProfileManager")
     def test_pipeline_session_guard(self, mock_manager_class):
         """Test pipeline blocks trades during closed sessions."""
+        from unittest.mock import Mock
+
         from app.pipeline import TradingPipeline
         from core.events import EventBus, SignalDetected, TradeBlocked
-        from unittest.mock import Mock
 
         # Mock symbol manager to return session closed
         mock_manager = Mock()
@@ -238,23 +237,21 @@ class TestPipelineIntegration:
         settings = Mock()
         bus = EventBus()
         broker = Mock()
-        
+
         pipeline = TradingPipeline(settings, bus, broker)
         pipeline.wire_handlers()
 
         # Track published events
         blocked_events = []
+
         def track_blocked(event: TradeBlocked):
             blocked_events.append(event)
-        
+
         bus.subscribe(TradeBlocked, track_blocked)
 
         # Publish signal during closed session
         signal = SignalDetected(
-            symbol="EURUSD",
-            side="BUY",
-            strength=0.8,
-            timestamp=datetime.now()
+            symbol="EURUSD", side="BUY", strength=0.8, timestamp=datetime.now()
         )
         bus.publish(signal)
 

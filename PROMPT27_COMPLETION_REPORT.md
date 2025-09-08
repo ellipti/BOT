@@ -58,7 +58,7 @@ Successfully implemented position netting policy to handle "олон жижиг 
 
 ✅ test_hedging_mode_no_netting: Verifies HEDGING bypasses netting logic
 ✅ test_netting_partial_reduction_fifo: FIFO closes oldest positions first
-✅ test_netting_partial_reduction_lifo: LIFO closes newest positions first  
+✅ test_netting_partial_reduction_lifo: LIFO closes newest positions first
 ✅ test_netting_proportional_reduction: Proportional reduces by relative size
 ✅ test_netting_full_closure_with_remaining: Handles full closure + remaining volume
 ✅ test_netting_no_opposite_positions: No reduction when same-side positions

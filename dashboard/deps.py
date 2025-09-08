@@ -85,31 +85,41 @@ class DashboardDataProvider:
                 "error": str(e),
             }
 
-    def get_orders_summary(self) -> dict[str, Any]:
-        """Get orders summary from OrderBook"""
+    def get_orders_summary(self, days: int | None = None) -> dict[str, Any]:
+        """Get orders summary from OrderBook with optional date filter"""
         try:
             order_book = self.get_order_book()
 
-            # Get orders by status
+            # Get orders by status with optional date filter
             with self._get_db_connection() as conn:
                 cursor = conn.cursor()
 
+                # Build date filter condition
+                date_condition = ""
+                params = []
+                if days is not None:
+                    date_condition = (
+                        f"WHERE created_ts >= datetime('now', '-{days} days')"
+                    )
+
                 # Count orders by status
                 cursor.execute(
-                    """
+                    f"""
                     SELECT status, COUNT(*)
                     FROM orders
+                    {date_condition}
                     GROUP BY status
                 """
                 )
                 status_counts = dict(cursor.fetchall())
 
-                # Get recent orders (last 10)
+                # Get recent orders (last 10) with date filter
                 cursor.execute(
-                    """
+                    f"""
                     SELECT coid, symbol, side, qty, filled_qty, status,
                            datetime(created_ts, 'unixepoch') as created_time
                     FROM orders
+                    {date_condition}
                     ORDER BY created_ts DESC
                     LIMIT 10
                 """
@@ -127,9 +137,14 @@ class DashboardDataProvider:
                     for row in cursor.fetchall()
                 ]
 
-                # Calculate today's PnL (simplified)
+                # Calculate today's PnL (simplified) with date filter
+                pnl_date_condition = (
+                    date_condition
+                    if days
+                    else "WHERE date(created_ts, 'unixepoch') = date('now')"
+                )
                 cursor.execute(
-                    """
+                    f"""
                     SELECT SUM(
                         CASE
                             WHEN side = 'BUY' THEN filled_qty * avg_fill_price * -1
@@ -138,8 +153,8 @@ class DashboardDataProvider:
                         END
                     ) as total_pnl
                     FROM orders
-                    WHERE status IN ('FILLED', 'PARTIAL')
-                    AND date(created_ts, 'unixepoch') = date('now')
+                    {pnl_date_condition}
+                    AND status IN ('FILLED', 'PARTIAL')
                 """
                 )
                 today_pnl = cursor.fetchone()[0] or 0.0
@@ -161,36 +176,30 @@ class DashboardDataProvider:
                 "error": str(e),
             }
 
-    def get_orders_by_status(self, status: str | None = None) -> list[dict[str, Any]]:
-        """Get orders filtered by status"""
+    def get_orders_by_status_and_date(
+        self, status: str | None = None, days: int = 7
+    ) -> list[dict[str, Any]]:
+        """Get orders filtered by status and date range (default last 7 days)"""
         try:
             with self._get_db_connection() as conn:
                 cursor = conn.cursor()
 
+                # Build query with date filter
+                base_query = f"""
+                    SELECT coid, symbol, side, qty, filled_qty, avg_fill_price,
+                           broker_order_id, status, sl, tp,
+                           datetime(created_ts, 'unixepoch') as created_time,
+                           datetime(updated_ts, 'unixepoch') as updated_time
+                    FROM orders
+                    WHERE created_ts >= datetime('now', '-{days} days')
+                """
+
                 if status:
-                    cursor.execute(
-                        """
-                        SELECT coid, symbol, side, qty, filled_qty, avg_fill_price,
-                               broker_order_id, status, sl, tp,
-                               datetime(created_ts, 'unixepoch') as created_time,
-                               datetime(updated_ts, 'unixepoch') as updated_time
-                        FROM orders
-                        WHERE status = ?
-                        ORDER BY created_ts DESC
-                    """,
-                        (status,),
-                    )
+                    query = base_query + " AND status = ? ORDER BY created_ts DESC"
+                    cursor.execute(query, (status,))
                 else:
-                    cursor.execute(
-                        """
-                        SELECT coid, symbol, side, qty, filled_qty, avg_fill_price,
-                               broker_order_id, status, sl, tp,
-                               datetime(created_ts, 'unixepoch') as created_time,
-                               datetime(updated_ts, 'unixepoch') as updated_time
-                        FROM orders
-                        ORDER BY created_ts DESC
-                    """
-                    )
+                    query = base_query + " ORDER BY created_ts DESC"
+                    cursor.execute(query)
 
                 return [
                     {
@@ -211,7 +220,9 @@ class DashboardDataProvider:
                 ]
 
         except Exception as e:
-            logger.error(f"Failed to get orders by status {status}: {e}")
+            logger.error(
+                f"Failed to get orders by status {status} and date filter {days} days: {e}"
+            )
             return []
 
     def get_chart_data(self, symbol: str, limit: int = 100) -> dict[str, Any]:

@@ -105,9 +105,7 @@ Related to #<!-- issue number -->
 
 **⚠️ BREAKING CHANGES:**
 
--
-
-**Migration Steps:**
+- **Migration Steps:**
 
 1.
 2.
