@@ -333,6 +333,7 @@ async def dashboard_overview(
 async def orders_page(
     request: Request,
     status_filter: str | None = None,
+    days: int = 7,  # Default to last 7 days
     user_info=Depends(require_trader),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
@@ -340,17 +341,18 @@ async def orders_page(
     user_id, user_roles = user_info
 
     try:
-        orders = provider.get_orders_by_status(status_filter)
-        status_counts = provider.get_orders_summary().get("status_counts", {})
+        orders = provider.get_orders_by_status_and_date(status_filter, days)
+        status_counts = provider.get_orders_summary(days).get("status_counts", {})
 
         return templates.TemplateResponse(
             "orders.html",
             {
                 "request": request,
-                "title": f"Orders {f'- {status_filter}' if status_filter else ''}",
+                "title": f"Orders (Last {days} days) {f'- {status_filter}' if status_filter else ''}",
                 "orders": orders,
                 "status_counts": status_counts,
                 "current_filter": status_filter,
+                "days_filter": days,
                 "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "user_id": user_id,
                 "user_roles": user_roles,
@@ -445,13 +447,14 @@ async def api_health(
 @app.get("/api/orders")
 async def api_orders(
     status_filter: str | None = None,
+    days: int = 7,  # Default to last 7 days
     user_info=Depends(require_trader),
     provider: DashboardDataProvider = Depends(get_dashboard_provider),
 ):
     """API endpoint for orders data (requires trader role)"""
     return {
-        "orders": provider.get_orders_by_status(status_filter),
-        "summary": provider.get_orders_summary(),
+        "orders": provider.get_orders_by_status_and_date(status_filter, days),
+        "summary": provider.get_orders_summary(days),
     }
 
 

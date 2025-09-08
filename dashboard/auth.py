@@ -24,6 +24,7 @@ from jose import JWTError, jwt
 
 from config.settings import get_settings
 from infra.secrets import get_secret
+from utils.i18n import t  # Монгол хэлний дэмжлэг
 
 logger = logging.getLogger(__name__)
 
@@ -197,7 +198,7 @@ def log_audit_event(
             f.write(json.dumps(audit_entry) + "\n")
 
         logger.info(
-            f"Audit: {event_type} - {user_id} - {'SUCCESS' if success else 'FAILED'}"
+            t("auth_login_ok" if success else "auth_login_fail") + f" - {user_id}"
         )
 
     except Exception as e:

@@ -1,74 +1,5 @@
 # Changelog
 
-## [v1.0.0] - 2025-09-08
-
-### 🚀 Major Features
-- **GA Readiness**: Complete General Availability readiness assessment system
-- **Automated Checks**: Comprehensive GA readiness validation with health checks
-- **Disaster Recovery**: Full DR drill automation with backup/restore/reconcile workflow
-- **Release Management**: Automated version tagging and release preparation
-
-### 🔧 Infrastructure
-- **Backup System**: Automated backup with integrity verification and retention policies
-- **Restore Capability**: Complete system restore from backup archives
-- **Health Monitoring**: Automated health checks for all system components
-- **Performance Metrics**: SLA validation with latency and error rate monitoring
-
-### 📊 Compliance & Audit
-- **Audit Logging**: Immutable audit trail with JSONL format
-- **Export Automation**: Daily export packages with integrity manifests
-- **Configuration Tracking**: SHA256 snapshots with Git diff integration
-- **Retention Management**: Configurable cleanup policies for compliance
-
-### 🛡️ Security
-- **Authentication**: JWT-based authentication with role-based access control
-- **Data Protection**: Comprehensive sensitive data redaction
-- **Security Validation**: Automated security posture assessment
-- **Compliance**: MiFID II and Dodd-Frank regulatory readiness
-
-### 🧪 Testing & Quality
-- **DR Drill Testing**: Automated disaster recovery drill execution
-- **Integration Tests**: End-to-end system validation
-- **Performance Testing**: Latency and throughput benchmarking
-- **Smoke Tests**: Critical function validation after restore
-
-### 📈 Performance Improvements
-- **Optimized Latency**: Trade loop P95 latency under 250ms
-- **Error Reduction**: Order rejection rate below 5%
-- **Reliability**: Fill timeout rate under 2%
-- **Resource Efficiency**: Memory usage under 2GB, CPU under 70%
-
-### 🐛 Bug Fixes
-- Fixed configuration file validation edge cases
-- Resolved backup integrity verification issues
-- Corrected position reconciliation logic
-- Fixed audit log rotation timing
-
-### 💥 Breaking Changes
-- None - fully backward compatible
-
-### 🔄 Migration Guide
-- No migration required for v1.0.0
-- All existing configurations and data are preserved
-- System will automatically upgrade audit log format
-
-### 📝 Documentation
-- Complete GA readiness documentation
-- DR procedures and runbooks updated
-- API documentation with security guidelines
-- Troubleshooting and operational guides
-
-### ⚡ Known Issues
-- None critical for production deployment
-- Minor UI improvements planned for v1.0.1
-
-### 🤝 Contributors
-- System Architecture and Implementation
-- DR and Backup System Design
-- Security and Compliance Framework
-- Testing and Quality Assurance
-
-
 All notable changes to the Trading Bot project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -83,6 +14,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detailed .env.example with full configuration explanations
 - Windows service deployment guide
 - Production runbook documentation
+
+## [1.0.1] - 2025-09-08
+
+### Fixed
+
+- **Trailing Stops**: Increased minimum step size from 5.0 to 8.0 pips to reduce jitter
+- **Trailing Stops**: Enhanced hysteresis threshold from 2.0 to 4.0 pips for stability
+- **Trailing Stops**: Improved configuration-driven parameter management
+
+### Performance
+
+- **Dashboard**: Orders page now defaults to last 7 days for faster loading
+- **Dashboard**: Added date range filters (24h, 7d, 30d) for better data navigation
+- **Observability**: Implemented 120-second alert debouncing to prevent notification spam
+- **Observability**: Added SLA monitoring with configurable thresholds
+
+### Changed
+
+- Enhanced trailing stop algorithm with better oscillation prevention
+- Improved dashboard user experience with date-based filtering
+- Optimized observability system with reduced alert noise
+
+### Added
+
+- New trailing probe test suite validating jitter reduction
+- Alert management system with debouncing and SLA monitoring
+- Extended dashboard filtering capabilities
 
 ## [1.2.0] - 2025-09-07
 

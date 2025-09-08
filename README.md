@@ -1,13 +1,13 @@
-# 🤖 Advanced Trading Bot System 🇲🇳
+# 🤖 Дэвшилтэт Арилжааны Робот Систем 🇲🇳
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-[![Mongolian Support](https://img.shields.io/badge/i18n-Mongolian-red.svg)](https://github.com/ellipti/BOT)
-[![GA Ready](https://img.shields.io/badge/status-Production%20Ready-green.svg)](https://github.com/ellipti/BOT)
+[![Лиценз: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Код загвар: хар](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Өмнөх шалгалт](https://img.shields.io/badge/pre--commit-идэвхтэй-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![Монгол хэлний дэмжлэг](https://img.shields.io/badge/i18n-Mongolian-red.svg)](https://github.com/ellipti/BOT)
+[![Үйлдвэрлэлд бэлэн](https://img.shields.io/badge/статус-Үйлдвэрлэлд%20бэлэн-green.svg)](https://github.com/ellipti/BOT)
 
-**Бүрэн хөгжүүлсэн, enterprise түвшний автомат арилжааны робот систем** - MetaTrader 5-тэй холбогдож, дэвшилтэт эрсдэлийн удирдлага, real-time мониторинг, монгол хэлний дэмжлэгтэй.
+**Бүрэн хөгжүүлсэн, компанийн түвшний автомат арилжааны робот систем** - MetaTrader 5-тэй холбогдож, дэвшилтэт эрсдэлийн удирдлага, бодит цагийн мониторинг, монгол хэлний бүрэн дэмжлэгтэй.
 
 ## 🎯 **Гол Функцууд (Core Features)**
 
@@ -60,316 +60,322 @@
 - 📅 **Weekly automation**: Долоо хоног тутмын тайлан + KPI tracking
 - 🎯 **GA Smoke тест**: Монголоор бүрэн системийн шалгалт
 
-## 🚀 Хурдан эхлэл (Quick Start)
+## 🚀 Хурдан эхлэл
 
 ### Шаардлагатай зүйлс
 
-- **Python 3.12+** (зөвлөдөг: 3.12.5)
+- **Python 3.12+** (санал болгох: 3.12.5)
 - **MetaTrader 5** суулгасан байх
-- **Windows OS** (үндсэн дэмжлэг)
-- **Virtual environment**
+- **Windows үйлдлийн систем** (үндсэн дэмжлэг)
+- **Виртуал орчин**
 
 ### 1. Суулгалт
 
 ```bash
-# Repository-г татах
+# Репозитори татаж авах
 git clone https://github.com/ellipti/BOT.git
 cd BOT
 
-# Virtual environment үүсгэх
+# Виртуал орчин үүсгэх
 python -m venv .venv
 
 # Идэвхжүүлэх
 .\.venv\Scripts\activate
 
-# Dependencies суулгах
+# Хамаарлуудыг суулгах
 pip install -r requirements.txt
 
-# Development (тест + linting):
+# Хөгжүүлэлт (тест болон линтинг):
 pip install -r requirements-dev.txt
 ```
 
 ### 2. Тохиргоо
 
 ```bash
-# MT5 тохиргоо
+# МТ5 тохиргоо
 copy settings.py.template settings.py
-# settings.py файлд MT5 login, password, server оруулах
+# settings.py файлд МТ5 нэвтрэх нэр, нууц үг, сервер оруулах
 
-# Telegram bot token
-# @BotFather-аас bot үүсгээд token авах
-# settings.py: TELEGRAM_BOT_TOKEN = "your_token_here"
+# Телеграм бот токен
+# @BotFather-аас бот үүсгээд токен авах
+# settings.py: TELEGRAM_BOT_TOKEN = "таны_токен_энд"
 
-# Keyring-д нууц хадгалах
+# Түлхүүрийн цагирагт нууц хадгалах
 python -c "
 import keyring
-keyring.set_password('trading_bot', 'mt5_password', 'your_password')
-keyring.set_password('trading_bot', 'telegram_token', 'your_bot_token')
+keyring.set_password('trading_bot', 'mt5_password', 'таны_нууц_үг')
+keyring.set_password('trading_bot', 'telegram_token', 'таны_бот_токен')
 "
 ```
 
 ### 3. Анхны ажиллуулалт
 
 ```bash
-# Системийн шалгалт (монголоор)
+# Системийн шалгалт (монгол хэлээр)
 python scripts/ga_smoke_mn.py
 
 # Арилжааны бот эхлүүлэх
 python app.py
 
-# Web dashboard (port 8080)
+# Веб хяналтын самбар (порт 8080)
 python scripts/run_dashboard.py --port 8080
 
-# Metrics цуглуулагч
+# Үзүүлэлт цуглуулагч
 python scripts/snapshot_metrics.py
 ```
 
 ## 📊 **Жишээ хэрэглээ**
 
-### Өдрийн ердийн ажиллагаа:
+### Өдөр тутмын ердийн ажиллагаа:
 
 ```python
-# 08:30 - Зах зээл нээгдэх үед session guard идэвхжинэе
-# 09:00 - EURUSD дээр BUY дохио → автоматаар 0.1 лот худалдана
-# 09:05 - +20 pips ашиг → trailing stop автоматаар эхлэнэ
-# 09:30 - High волатилитид шилжвэл эрсдэл багасгана
-# 17:00 - Зах зээл хаагдахад session guard захиалгыг хориглоно
+# 08:30 - Зах зээл нээгдэх үед сешний хамгаалалт идэвхжинэ
+# 09:00 - EURUSD дээр ХУДАЛДАЖ АВАХ дохио → автоматаар 0.1 лот арилжаалах
+# 09:05 - +20 пип ашиг → дагах зогсоолт автоматаар эхлэнэ
+# 09:30 - Өндөр тогтворгүй байдалд шилжвэл эрсдэл багасгана
+# 17:00 - Зах зээл хаагдахад сешний хамгаалалт захиалгыг хориглоно
 ```
 
-### Weekly тайлан:
+### Долоо хоногийн тайлан:
 
 ```bash
 # Автомат долоо хоногийн тайлан
 python scripts/ops_weekly_report.py
-# → docs/WEEKLY_OPS_REPORT.md (монголоор)
+# → docs/WEEKLY_OPS_REPORT.md (монгол хэлээр)
 
 # KPI харах:
-# • Loop P95 latency: 245.6ms
-# • Reject rate: 1.2%
-# • SLA breaches: 0
-# • DR drill статус: ❌
+# • Давталтын P95 хоцролт: 245.6мс
+# • Татгалзах хувь: 1.2%
+# • SLA зөрчил: 0
+# • ГС дадлагын төлөв: ❌
 ```
 
 ## 🛠️ **Хөгжүүлэлт**
 
-### Код чанарын шалгалт:
+### Кодын чанарын шалгалт:
 
 ```bash
-# Pre-commit hooks суулгах
+# Урьдчилсан шалгалтын холбоосыг суулгах
 pre-commit install
 
 # Бүх шалгалт ажиллуулах
 pre-commit run --all-files
 
-# Mypy type checking
+# Mypy төрлийн шалгалт
 mypy .
 
-# Security scan
+# Аюулгүй байдлын скан
 bandit -r . -f json -o bandit_results.json
 ```
 
 ### Тест ажиллуулах:
 
-````bash
+```bash
 # Бүх тест
 pytest
 
-# Coverage-тэй
+# Хүрээтэй
 pytest --cov=. --cov-report=xml
+```
 
-## 💎 **Production Features**
+## 💎 **Үйлдвэрлэлийн онцлогууд**
 
 ### 🔄 **Автоматжуулсан үйл ажиллагаа**
-- **GitHub Actions CI/CD**: Код push хийхэд автоматаар тест, build, deploy
-- **Weekly Ops Report**: Долоо хоног тутмын KPI тайлан (Monday 3:00 AM UTC)
-- **Daily backup**: Өдөр бүр audit log + config snapshot
-- **Health monitoring**: Prometheus metrics + Grafana dashboard-ready
+
+- **GitHub Actions CI/CD**: Код push хийхэд автоматаар тест, build, deploy хийх
+- **Долоо хоногийн үйлдвэрлэлийн тайлан**: Долоо хоногийн KPI тайлан (Даваа 3:00 AM UTC)
+- **Өдөр тутмын нөөцлөлт**: Өдөр бүр аудитын лог болон тохиргооны snapshot
+- **Эрүүл мэндийн мониторинг**: Прометеус үзүүлэлтүүд болон Графана хяналтын самбар бэлэн
 
 ### 🌟 **Шинэ функцууд**
+
 ```python
-# Multi-asset арилжаа
-symbols = ["EURUSD", "XAUUSD", "US500", "BTCUSD"]
-sessions = {
-    "FOREX": "24x5",    # Mon 00:00 - Fri 23:59
-    "METAL": "24x5",    # tick_size=0.01
-    "INDEX": "RTH",     # Regular trading hours зөвхөн
-    "CRYPTO": "24x7"    # Бүх цагаар
+# Олон хөрөнгийн арилжаа
+тэмдэгтүүд = ["EURUSD", "XAUUSD", "US500", "BTCUSD"]
+сешнүүд = {
+    "ВАЛЮТЫН_ЗАХ_ЗЭЭЛ": "24ц5ө",    # Даваа 00:00 - Баасан 23:59
+    "МЕТАЛЛ": "24ц5ө",             # tick_size=0.01
+    "ИНДЕКС": "ЭАЦ",               # Ердийн арилжааны цагаар зөвхөн
+    "КРИПТО": "24ц7ө"             # Бүх цагаар
 }
 
-# Волатилитийн горим
-if market.volatility == "HIGH":
-    risk_pct = 0.5  # Бага эрсдэл
-elif market.volatility == "LOW":
-    risk_pct = 2.0  # Илүү эрсдэл авч болно
-````
+# Тогтворгүй байдлын горим
+if зах_зээл.тогтворгүй_байдал == "ӨНДӨР":
+    эрсдэлийн_хувь = 0.5  # Бага эрсдэл
+elif зах_зээл.тогтворгүй_байдал == "БАГА":
+    эрсдэлийн_хувь = 2.0  # Илүү эрсдэл авч болно
+```
 
-### 🇲🇳 **Монгол локализаци**
+### 🇲🇳 **Монгол хэлний локализаци**
 
 ```python
-# Лог мессеж монголоор
-logger.info(t("order_placed", symbol="EURUSD", side="BUY", qty=0.1))
-# → "Захиалга илгээгдлээ: EURUSD BUY 0.1"
+# Лог мессеж монгол хэлээр
+logger.info(t("захиалга_илгээгдсэн", тэмдэгт="EURUSD", тал="ХУДАЛДАЖ_АВАХ", тоо_хэмжээ=0.1))
+# → "Захиалга илгээгдлээ: EURUSD ХУДАЛДАЖ АВАХ 0.1"
 
-# Telegram алерт монголоор
-telegram.send(t("sla_breach", metric="latency", value="250ms", threshold="100ms"))
-# → "🚨 SLA зөрчил: latency утга=250ms босго=100ms"
+# Телеграм алерт монгол хэлээр
+telegram.send(t("sla_зөрчил", үзүүлэлт="хоцролт", утга="250мс", босго="100мс"))
+# → "🚨 SLA зөрчил: хоцролт утга=250мс босго=100мс"
 
-# Weekly report монголоор
+# Долоо хоногийн тайлан монгол хэлээр
 """
 # 7 Хоногийн Үйл Ажиллагааны Тайлан
 ## 🎯 Гол Үзүүлэлтүүд (KPI)
-- Loop P95: 245.6ms / < 200ms
-- Reject rate: 1.2% / < 3%
+- Давталтын P95: 245.6мс / < 200мс
+- Татгалзах хувь: 1.2% / < 3%
 - SLA зөрчил: 0
 ## 📋 Санал болгох арга хэмжээ
-- DR дадлага хийх
+- ГС дадлага хийх
 """
 ```
 
-## 🏗️ **Architecture Overview**
+## 🏗️ **Архитектурын тойм**
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Web Dashboard │    │  Trading Engine │    │   MT5 Platform  │
+│ Веб хяналтын    │    │  Арилжааны      │    │   МТ5 платформ   │
+│     самбар      │    │     хөдөлгүүр   │    │                 │
 │                 │    │                 │    │                 │
-│ • JWT Auth      │◄──►│ • Signal Gen    │◄──►│ • Live Prices   │
-│ • RBAC          │    │ • Risk Mgmt     │    │ • Order Exec    │
-│ • Real-time UI  │    │ • Position Mgmt │    │ • Account Info  │
+│ • JWT гэрчлэл   │◄──►│ • Дохио үүсгэх  │◄──►│ • Амьд үнэ      │
+│ • RBAC          │    │ • Эрсдэл удирдах│    │ • Захиалга гүйцэт│
+│ • Бодит цагийн UI│    │ • Байрлал удирдах│   │ • Дансны мэдээлэл│
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Audit System  │    │ Telegram Alerts │    │ Monitoring      │
+│ Аудитын систем  │    │ Телеграм алерт  │    │ Мониторинг      │
 │                 │    │                 │    │                 │
-│ • JSONL logs    │    │ • Trade alerts  │    │ • Prometheus    │
-│ • Daily export  │    │ • SLA breaches  │    │ • Health checks │
-│ • Immutable     │    │ • Mongolian i18n│    │ • Weekly report │
+│ • JSONL логууд  │    │ • Арилжааны алерт│    │ • Прометеус     │
+│ • Өдөр тутмын   │    │ • SLA зөрчил    │    │ • Эрүүл мэндийн │
+│   экспорт       │    │ • Монгол i18n   │    │   шалгалт       │
+│ • Өөрчлөх       │    │                 │    │ • Долоо хоногийн│
+│   боломжгүй     │    │                 │    │   тайлан        │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## 📈 **Performance Metrics**
+## 📈 **Гүйцэтгэлийн үзүүлэлтүүд**
 
-| Metric                   | Current | Target  | Status       |
-| ------------------------ | ------- | ------- | ------------ |
-| **Loop P95 Latency**     | 185ms   | <200ms  | ✅ Good      |
-| **Order Rejection Rate** | 1.2%    | <3%     | ✅ Low       |
-| **System Uptime**        | 99.8%   | >99.5%  | ✅ Excellent |
-| **Memory Usage**         | 145MB   | <200MB  | ✅ Efficient |
-| **SLA Breaches**         | 0/week  | <5/week | ✅ Clean     |
+| Үзүүлэлт                     | Одоогийн      | Зорилт         | Төлөв байдал |
+| ---------------------------- | ------------- | -------------- | ------------ |
+| **Давталтын P95 хоцролт**    | 185мс         | <200мс         | ✅ Сайн      |
+| **Захиалгын татгалзах хувь** | 1.2%          | <3%            | ✅ Бага      |
+| **Системийн ажиллах цаг**    | 99.8%         | >99.5%         | ✅ Маш сайн  |
+| **Санах ойн хэрэглээ**       | 145МБ         | <200МБ         | ✅ Үр дүнтэй |
+| **SLA зөрчил**               | 0/долоо хоног | <5/долоо хоног | ✅ Цэвэр     |
 
-## 🧪 **Тестийн coverage**
+## 🧪 **Тестийн хүрээ**
 
 ```bash
-# Jitter reduction тест
+# Титрэлт багасгах тест
 python tests/test_trailing_probe.py
-# ✅ Hysteresis prevents oscillations
-# ✅ Minimum step requires larger moves
-# ✅ Jitter reduced in volatile conditions
+# ✅ Гистерезис титрэлтийг зогсооно
+# ✅ Хамгийн бага алхам илүү том хөдөлгөөн шаардана
+# ✅ Тогтворгүй нөхцөлд титрэлт багассан
 
-# GA smoke тест (монголоор)
+# ҮА утааны тест (монгол хэлээр)
 python scripts/ga_smoke_mn.py
-# ✅ Эрүүл мэнд... ✅ Метрик... ✅ Smoke тест...
+# ✅ Эрүүл мэнд... ✅ Үзүүлэлт... ✅ Утааны тест...
 ```
 
 ```bash
-# After thorough testing, enable live trading
-# Set DRY_RUN=false in .env file
+# Сайтар туршсаны дараа амьд арилжааг идэвхжүүлэх
+# .env файлд DRY_RUN=false тохируулах
 
-# Run the bot
+# Ботыг ажиллуулах
 python app.py
 
-# Or deploy as Windows service (see Production Deployment section)
+# Эсвэл Windows үйлчилгээ болгож суулгах (Үйлдвэрлэлийн суулгалт хэсгийг үзнэ үү)
 ```
 
-## ⚙️ Configuration
+## ⚙️ Тохиргоо
 
-The bot uses environment variables for configuration. Copy `.env.example` to `.env` and customize:
+Бот нь орчны хувьсагчдыг тохиргоонд ашигладаг. `.env.example`-г `.env` болгож хуулж, тохируулна уу:
 
-### Essential Settings
+### Чухал тохиргоо
 
 ```bash
-# MetaTrader 5 Connection
-ATTACH_MODE=true                    # Connect to running MT5 terminal
+# MetaTrader 5 холболт
+ATTACH_MODE=true                    # Ажиллаж буй МТ5 терминалд холбогдох
 MT5_TERMINAL_PATH=C:\Program Files\MetaTrader 5\terminal64.exe
 
-# Trading Strategy
-SYMBOL=XAUUSD                       # Trading instrument
-TF_MIN=30                          # 30-minute timeframe
-RISK_PCT=0.01                      # 1% risk per trade
+# Арилжааны стратеги
+SYMBOL=XAUUSD                       # Арилжааны хэрэгсэл
+TF_MIN=30                          # 30 минутын хугацааны хүрээ
+RISK_PCT=0.01                      # Арилжаа тутамд 1% эрсдэл
 
-# Safety Controls
-DRY_RUN=true                       # Paper trading mode
-MAX_TRADES_PER_DAY=3               # Daily trade limit
-MAX_DAILY_LOSS_PCT=0.05            # 5% daily loss limit
+# Аюулгүй байдлын хяналт
+DRY_RUN=true                       # Цаасан арилжааны горим
+MAX_TRADES_PER_DAY=3               # Өдрийн арилжааны хязгаар
+MAX_DAILY_LOSS_PCT=0.05            # Өдрийн 5% алдагдлын хязгаар
 
-# Telegram Notifications
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_CHAT_ID=your_chat_id
+# Телеграм мэдэгдэл
+TELEGRAM_BOT_TOKEN=таны_бот_токен
+TELEGRAM_CHAT_ID=таны_чат_айди
 ```
 
-### Complete Configuration Guide
+### Бүрэн тохиргооны гарын авлага
 
-See [.env.example](./.env.example) for comprehensive configuration options with detailed explanations.
+Дэлгэрэнгүй тайлбартай бүрэн тохиргооны сонголтуудыг [.env.example](./.env.example) файлаас үзнэ үү.
 
-## 🎯 Trading Strategy
+## 🎯 Арилжааны стратеги
 
-The bot implements a baseline strategy with:
+Бот нь дараах онцлогуудтай үндсэн стратегийг хэрэгжүүлдэг:
 
-- **MA Crossover**: Fast/slow moving average signals
-- **RSI Filter**: Momentum confirmation (20-80 range)
-- **ATR Position Sizing**: Volatility-based risk management
-- **News Avoidance**: Economic calendar integration
-- **Session Filtering**: Trade only during high-liquidity sessions
+- **Хөдөлж буй дунджийн огтлолцол**: Хурдан/удаан хөдөлж буй дунджийн дохио
+- **RSI шүүлтүүр**: Импульсийн баталгаажуулалт (20-80 хүрээ)
+- **ATR байрлалын хэмжээ**: Тогтворгүй байдалд суурилсан эрсдэлийн удирдлага
+- **Мэдээ зайлсхийх**: Эдийн засгийн календарь интеграц
+- **Сешний шүүлтүүр**: Зөвхөн өндөр хөрвөх чадвартай сешний үед арилжаалах
 
-### Risk Management
+### Эрсдэлийн удирдлага
 
-- **Stop Loss**: 1.5x ATR distance (configurable)
-- **Take Profit**: 3.0x ATR distance (2:1 risk-reward)
-- **Position Sizing**: Percentage-based risk calculation
-- **Daily Limits**: Prevent overtrading and excessive losses
-- **Cooldown Periods**: Minimum time between trades
+- **Алдагдлын зогсоолт**: 1.5x ATR зай (тохируулах боломжтой)
+- **Ашгийн авалт**: 3.0x ATR зай (2:1 эрсдэл-шагнал)
+- **Байрлалын хэмжээ**: Хувьд суурилсан эрсдэлийн тооцоо
+- **Өдрийн хязгаар**: Хэт их арилжаа болон их алдагдлаас сэргийлэх
+- **Амрах хугацаа**: Арилжаануудын хооронд хамгийн бага цаг
 
-## 📊 Backtesting
+## 📊 Хуучин өгөгдлийн тест
 
 ```bash
-# Run comprehensive backtest
+# Иж бүрэн хуучин өгөгдлийн тест ажиллуулах
 python test_backtest.py
 
-# Generate optimization charts
+# Оновчлолын график үүсгэх
 python test_optimization_charts.py
 
-# View results in reports/ directory
+# Үр дүнг reports/ хавтаст үзэх
 ls reports/
 ```
 
-### Backtest Features
+### Хуучин өгөгдлийн тестийн онцлогууд
 
-- **Historical Analysis**: Test strategies on past data
-- **Performance Metrics**: Win rate, profit factor, max drawdown
-- **Visual Reports**: Equity curves, trade distribution, performance dashboard
-- **Parameter Optimization**: Find optimal strategy settings
+- **Түүхэн шинжилгээ**: Өмнөх өгөгдөл дээр стратеги тестлэх
+- **Гүйцэтгэлийн үзүүлэлтүүд**: Ялалтын хувь, ашгийн хүчин зүйл, хамгийн их уналт
+- **Харааны тайлан**: Өмчийн муруй, арилжааны хуваарилалт, гүйцэтгэлийн хяналтын самбар
+- **Параметрийн оновчлол**: Хамгийн оновчтой стратегийн тохиргоог олох
 
-## 💬 Telegram Integration
+## 💬 Телеграм интеграц
 
-Set up rich notifications with charts and trade details:
+График болон арилжааны дэлгэрэнгүй мэдээлэлтэй баялаг мэдэгдлийг тохируулах:
 
-1. **Create Bot**: Message @BotFather on Telegram
-2. **Get Token**: Save the bot token from BotFather
-3. **Get Chat ID**: Message @userinfobot to get your chat ID
-4. **Configure**: Add token and chat ID to .env file
+1. **Бот үүсгэх**: Телеграм дээр @BotFather-д мессеж илгээх
+2. **Токен авах**: BotFather-аас бот токенийг хадгалах
+3. **Чат ID авах**: Өөрийн чат ID-г авахын тулд @userinfobot-д мессеж илгээх
+4. **Тохируулах**: Токен болон чат ID-г .env файлд нэмэх
 
-### Notification Features
+### Мэдэгдлийн онцлогууд
 
-- 📈 **Trade Alerts**: Entry, exit, and update notifications
-- 📊 **Performance Charts**: Technical analysis with overlays
-- 🚨 **Error Alerts**: System issues and failures
-- 📋 **Daily Summaries**: Performance reports and statistics
+- 📈 **Арилжааны алерт**: Орох, гарах болон шинэчлэх мэдэгдэл
+- 📊 **Гүйцэтгэлийн график**: Давхар зурагтай техникийн шинжилгээ
+- 🚨 **Алдааны алерт**: Системийн асуудал болон бүтэлгүйтэл
+- 📋 **Өдрийн хураангуй**: Гүйцэтгэлийн тайлан болон статистик
 
-## 🏗️ Production Deployment
+## 🏗️ Үйлдвэрлэлийн байршуулалт
 
-### Method 1: Windows Task Scheduler
+### Арга 1: Windows Даалгавар товлогч
 
-Create a batch file `run_bot.bat`:
+`run_bot.bat` batch файл үүсгэх:
 
 ```batch
 @echo off
@@ -378,38 +384,38 @@ call .venv\Scripts\activate.bat
 python app.py
 ```
 
-Schedule in Task Scheduler:
+Даалгавар товлогчид товлох:
 
-1. Open Task Scheduler → Create Basic Task
-2. Set trigger: Daily, repeat every 1 minute
-3. Action: Start program → `D:\BOT\BOT\run_bot.bat`
-4. Configure: Run with highest privileges
-5. Settings: Allow task to be run on demand
+1. Даалгавар товлогч нээх → Үндсэн даалгавар үүсгэх
+2. Триггер тохируулах: Өдөр тутам, 1 минут тутам давтах
+3. Үйлдэл: Програм эхлүүлэх → `D:\BOT\BOT\run_bot.bat`
+4. Тохируулах: Хамгийн өндөр эрхээр ажиллуулах
+5. Тохиргоо: Даалгаврыг шаардлагын дагуу ажиллуулах боломжтой
 
-### Method 2: NSSM (Non-Sucking Service Manager)
+### Арга 2: NSSM (Сайхан үйлчилгээний удирдагч)
 
 ```bash
-# Download and install NSSM
+# NSSM татаж суулгах
 # https://nssm.cc/download
 
-# Install as Windows service
-nssm install TradingBot "D:\BOT\BOT\.venv\Scripts\python.exe"
-nssm set TradingBot Parameters "D:\BOT\BOT\app.py"
-nssm set TradingBot AppDirectory "D:\BOT\BOT"
-nssm set TradingBot DisplayName "Trading Bot Service"
-nssm set TradingBot Description "Automated Trading Bot with MT5 Integration"
+# Windows үйлчилгээ болгож суулгах
+nssm install АрилжааныБот "D:\BOT\BOT\.venv\Scripts\python.exe"
+nssm set АрилжааныБот Parameters "D:\BOT\BOT\app.py"
+nssm set АрилжааныБот AppDirectory "D:\BOT\BOT"
+nssm set АрилжааныБот DisplayName "Арилжааны бот үйлчилгээ"
+nssm set АрилжааныБот Description "МТ5 интеграцтай автомат арилжааны бот"
 
-# Start the service
-nssm start TradingBot
+# Үйлчилгээг эхлүүлэх
+nssm start АрилжааныБот
 
-# Check status
-nssm status TradingBot
+# Төлөв байдал шалгах
+nssm status АрилжааныБот
 ```
 
-### Method 3: Docker (Advanced)
+### Арга 3: Докер (Дэвшилтэт)
 
 ```dockerfile
-# Dockerfile example
+# Dockerfile жишээ
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -420,108 +426,108 @@ COPY . .
 CMD ["python", "app.py"]
 ```
 
-## 🧪 Development
+## 🧪 Хөгжүүлэлт
 
-### Code Quality
+### Кодын чанар
 
-The project uses automated code quality tools:
+Төсөл нь автомат кодын чанарын хэрэгслүүдийг ашигладаг:
 
 ```bash
-# Format code
+# Кодыг форматлах
 black .
 isort .
 
-# Lint code
+# Кодыг шалгах
 ruff check .
 
-# Security scan
+# Аюулгүй байдлын скан
 bandit -r .
 
-# Run all quality checks
+# Бүх чанарын шалгалт ажиллуулах
 pre-commit run --all-files
 ```
 
-### Testing
+### Тестлэх
 
 ```bash
-# Run all tests
+# Бүх тест ажиллуулах
 pytest
 
-# Run with coverage
+# Хүрээтэй ажиллуулах
 pytest --cov=.
 
-# Run specific test categories
-pytest -m "not slow"           # Skip slow tests
-pytest -m integration          # Integration tests only
-pytest -m unit                # Unit tests only
+# Тодорхой тестийн ангиллыг ажиллуулах
+pytest -m "not slow"           # Удаан тестүүдийг алгасах
+pytest -m integration          # Зөвхөн интеграцийн тест
+pytest -m unit                # Зөвхөн нэгжийн тест
 ```
 
-### Adding Dependencies
+### Хамаарал нэмэх
 
 ```bash
-# Add to requirements.in (production) or requirements-dev.in (development)
-echo "new-package==1.0.0" >> requirements.in
+# requirements.in (үйлдвэрлэл) эсвэл requirements-dev.in (хөгжүүлэлт) рүү нэмэх
+echo "шинэ-пакеж==1.0.0" >> requirements.in
 
-# Compile locked versions
+# Түгжигдсэн хувилбаруудыг эмхэтгэх
 pip-compile requirements.in
 pip-compile requirements-dev.in
 
-# Install updated dependencies
+# Шинэчилсэн хамаарлуудыг суулгах
 pip-sync requirements-dev.txt
 ```
 
-## 📁 Project Structure
+## 📁 Төслийн бүтэц
 
 ```
-├── app.py                    # Main application entry point
-├── safety_gate.py           # Trading safety features & limits
-├── logging_setup.py         # Centralized logging configuration
-├── .env.example             # Environment configuration template
-├── pyproject.toml           # Project metadata and tool configuration
-├── requirements*.txt        # Locked dependencies
+├── app.py                    # Үндсэн программын эхлэх цэг
+├── safety_gate.py           # Арилжааны аюулгүй байдлын онцлог & хязгаарлалт
+├── logging_setup.py         # Төвлөрсөн логийн тохиргоо
+├── .env.example             # Орчны тохиргооны загвар
+├── pyproject.toml           # Төслийн мета өгөгдөл болон хэрэгслийн тохиргоо
+├── requirements*.txt        # Түгжигдсэн хамаарлууд
 ├──
-├── core/                    # Core trading engine
-│   ├── config.py           # Configuration management
-│   ├── logger.py           # Logging utilities
-│   ├── mt5_client.py       # MetaTrader 5 integration
-│   ├── trade_executor.py   # Order execution logic
-│   ├── state.py           # Persistent state management
-│   └── vision_*.py        # Chart analysis and vision context
+├── core/                    # Үндсэн арилжааны хөдөлгүүр
+│   ├── config.py           # Тохиргооны удирдлага
+│   ├── logger.py           # Логийн хэрэгслүүд
+│   ├── mt5_client.py       # MetaTrader 5 интеграц
+│   ├── trade_executor.py   # Захиалга гүйцэтгэх логик
+│   ├── state.py           # Байнгын төлөв байдлын удирдлага
+│   └── vision_*.py        # Графикийн шинжилгээ болон харааны контекст
 ├──
-├── services/               # External service integrations
-│   ├── telegram_*.py      # Telegram notifications
-│   ├── chart_renderer.py  # Technical chart generation
-│   └── vision_context.py  # Market context analysis
+├── services/               # Гадны үйлчилгээний интеграц
+│   ├── telegram_*.py      # Телеграм мэдэгдэл
+│   ├── chart_renderer.py  # Техникийн график үүсгэгч
+│   └── vision_context.py  # Зах зээлийн контекст шинжилгээ
 ├──
-├── strategies/            # Trading strategies
-│   ├── baseline.py       # Default MA crossover + RSI strategy
-│   └── indicators.py    # Technical analysis indicators
+├── strategies/            # Арилжааны стратегиуд
+│   ├── baseline.py       # Үндсэн МА огтлолцол + RSI стратеги
+│   └── indicators.py    # Техникийн шинжилгээний үзүүлэлтүүд
 ├──
-├── risk/                 # Risk management
-│   ├── governor.py      # Risk oversight and limits
-│   ├── validator.py     # Signal validation
-│   └── session.py       # Trading session management
+├── risk/                 # Эрсдэлийн удирдлага
+│   ├── governor.py      # Эрсдэлийн хяналт болон хязгаарлалт
+│   ├── validator.py     # Дохионы баталгаажуулалт
+│   └── session.py       # Арилжааны сешний удирдлага
 ├──
-├── integrations/         # External API integrations
-│   └── calendar.py      # Economic calendar (Trading Economics)
+├── integrations/         # Гадны API интеграц
+│   └── calendar.py      # Эдийн засгийн календарь (Арилжааны эдийн засаг)
 ├──
-├── backtest/            # Backtesting engine
-│   ├── runner.py       # Backtest execution
-│   ├── chart_renderer.py # Performance visualization
-│   └── config_loader.py # Strategy configuration
+├── backtest/            # Хуучин өгөгдлийн тестийн хөдөлгүүр
+│   ├── runner.py       # Хуучин өгөгдлийн тест гүйцэтгэх
+│   ├── chart_renderer.py # Гүйцэтгэлийн дүрслэл
+│   └── config_loader.py # Стратегийн тохиргоо
 ├──
-├── utils/               # Utilities
-│   ├── mt5_exec.py     # MT5 execution helpers
-│   └── atomic_io.py    # Atomic file operations
+├── utils/               # Хэрэгслүүд
+│   ├── mt5_exec.py     # МТ5 гүйцэтгэлийн туслагч
+│   └── atomic_io.py    # Атомын файлын үйлдлүүд
 ├──
-├── state/              # Persistent data
-│   ├── limits.json    # Trading limits state
-│   └── *.json.backup  # State backups
+├── state/              # Байнгын өгөгдөл
+│   ├── limits.json    # Арилжааны хязгаарлалтын төлөв
+│   └── *.json.backup  # Төлөв байдлын нөөц
 ├──
-├── logs/              # Application logs
-├── charts/            # Generated technical charts
-├── reports/           # Backtest and performance reports
-└── configs/           # Strategy configurations
+├── logs/              # Программын логууд
+├── charts/            # Үүсгэсэн техникийн графикууд
+├── reports/           # Хуучин өгөгдөл болон гүйцэтгэлийн тайлан
+└── configs/           # Стратегийн тохиргоо
 ```
 
 ## 🔐 Security Considerations
@@ -650,4 +656,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Last Updated**: September 7, 2025
 **Next Release**: v1.3.0 (Enhanced AI integration)
 
-Made with ❤️ for the trading community
+Made with ❤️ Naidan

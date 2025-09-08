@@ -22,6 +22,7 @@ import yaml
 from pydantic import BaseModel, Field
 
 from feeds import Candle
+from utils.i18n import t  # Монгол хэлний орчуулгын систем
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,8 @@ def load_regime_config(config_path: str = "configs/risk_regimes.yaml") -> Regime
     try:
         config_file = Path(config_path)
         if not config_file.exists():
-            logger.warning(f"Regime config not found: {config_path}, using defaults")
+            # Дэглэмийн тохиргоо файл олдсонгүй, анхдагч утгууд ашиглана
+            logger.warning(t("regime_config_not_found", path=config_path))
             return RegimeConfig(
                 active=True,
                 atr_window=14,
@@ -85,7 +87,8 @@ def load_regime_config(config_path: str = "configs/risk_regimes.yaml") -> Regime
         return RegimeConfig(**data)
 
     except Exception as e:
-        logger.error(f"Failed to load regime config: {e}, using defaults")
+        # Дэглэмийн тохиргоо ачаалахад алдаа гарсан
+        logger.error(t("regime_config_load_error", error=e))
         return RegimeConfig(
             active=True,
             atr_window=14,
@@ -111,8 +114,13 @@ def compute_norm_atr(candles: list[Candle], atr_window: int) -> float:
         Normalized ATR as ratio (e.g., 0.005 = 0.5%)
     """
     if len(candles) < atr_window + 1:
+        # ATR тооцоход хангалттай ханш байхгүй
         logger.warning(
-            f"Insufficient candles for ATR: {len(candles)} < {atr_window + 1}"
+            t(
+                "regime_candles_insufficient",
+                count=len(candles),
+                required=atr_window + 1,
+            )
         )
         return 0.0
 
@@ -140,7 +148,8 @@ def compute_norm_atr(candles: list[Candle], atr_window: int) -> float:
         # Normalize by current close price
         current_price = candles[-1].close
         if current_price <= 0:
-            logger.error(f"Invalid current price: {current_price}")
+            # Одоогийн үнэ буруу байна
+            logger.error(t("regime_atr_invalid_price", price=current_price))
             return 0.0
 
         normalized_atr = atr / current_price
@@ -154,7 +163,8 @@ def compute_norm_atr(candles: list[Candle], atr_window: int) -> float:
         return normalized_atr
 
     except Exception as e:
-        logger.error(f"Error computing normalized ATR: {e}")
+        # ATR тооцохад алдаа гарлаа
+        logger.error(t("regime_atr_error", error=e))
         return 0.0
 
 
@@ -200,7 +210,8 @@ def compute_return_volatility(candles: list[Candle], window: int) -> float:
         return std_dev
 
     except Exception as e:
-        logger.error(f"Error computing return volatility: {e}")
+        # Буцаагийн хэлбэлзэл тооцохад алдаа гарлаа
+        logger.error(t("regime_return_vol_error", error=e))
         return 0.0
 
 
@@ -218,9 +229,13 @@ class RegimeDetector:
         self._regime_history: list[RegimeType] = []
         self._regime_start_time: int | None = None
 
+        # RegimeDetector үүсгэж эхлүүлэв
         logger.info(
-            f"RegimeDetector initialized: active={self.cfg.active}, "
-            f"thresholds={self.cfg.thresholds.model_dump()}"
+            t(
+                "regime_detector_init",
+                active=self.cfg.active,
+                thresholds=self.cfg.thresholds.model_dump(),
+            )
         )
 
     def detect(self, candles: list[Candle], symbol: str = "UNKNOWN") -> RegimeType:
@@ -235,11 +250,13 @@ class RegimeDetector:
             Current regime: "low", "normal", or "high"
         """
         if not self.cfg.active:
-            logger.debug("Regime detection disabled, using default")
+            # Дэглэм тогтоох идэвхгүй байна
+            logger.debug(t("regime_detection_disabled"))
             return self.cfg.default_regime
 
         if len(candles) < max(self.cfg.atr_window + 1, self.cfg.ret_window):
-            logger.warning(f"Insufficient candles for regime detection: {len(candles)}")
+            # Дэглэм тогтооход хангалттай ханш байхгүй
+            logger.warning(t("regime_candles_insufficient_warn", count=len(candles)))
             return self.cfg.default_regime
 
         try:
@@ -266,15 +283,23 @@ class RegimeDetector:
             if len(self._regime_history) > 100:  # Keep last 100 readings
                 self._regime_history = self._regime_history[-100:]
 
+            # Дэглэм тогтооны мэдээлэл бүртгэх
             logger.info(
-                f"Regime detection [{symbol}]: norm_ATR={norm_atr:.6f}, "
-                f"ret_vol={ret_vol:.6f}, raw={raw_regime}, stable={stable_regime}"
+                t(
+                    "regime_detection",
+                    symbol=symbol,
+                    norm_atr=norm_atr,
+                    ret_vol=ret_vol,
+                    raw_regime=raw_regime,
+                    stable_regime=stable_regime,
+                )
             )
 
             return stable_regime
 
         except Exception as e:
-            logger.error(f"Regime detection failed for {symbol}: {e}")
+            # Дэглэм тогтоох процесст алдаа гарлаа
+            logger.error(t("regime_detection_failed", symbol=symbol, error=e))
             return self.cfg.default_regime
 
     def _apply_stability(self, raw_regime: RegimeType) -> RegimeType:
@@ -297,9 +322,14 @@ class RegimeDetector:
         if consistency >= self.cfg.regime_confidence:
             return raw_regime
         else:
+            # Дэглэмийн тогтвортой байдлыг хадгалах
             logger.debug(
-                f"Regime stability: keeping {current_regime} "
-                f"(consistency={consistency:.2f} < {self.cfg.regime_confidence})"
+                t(
+                    "regime_stability",
+                    current=current_regime,
+                    consistency=consistency,
+                    threshold=self.cfg.regime_confidence,
+                )
             )
             return current_regime
 
@@ -321,7 +351,8 @@ class RegimeDetector:
                 "TP_MULT": params.TP_MULT,
             }
         except KeyError:
-            logger.error(f"Unknown regime: {regime}, using default")
+            # Үл мэдэгдэх дэглэм, анхдагч параметрүүд ашиглана
+            logger.error(t("regime_unknown", regime=regime))
             params = self.cfg.params[self.cfg.default_regime]
             return {
                 "RISK_PCT": params.RISK_PCT,
